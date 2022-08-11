@@ -1,0 +1,123 @@
+## body rules:
+# if "properties" exists: it's an object
+# if "items" exists: it's a list
+# if "choices" exists: list of possible values should be displayed
+# if "default" exists: default value(s) should be entered to text area
+
+# ToDo: добавить ключ url_params для параметров в url по тому же принципу, что и в body.
+# ToDo: то же самое - для заголовков.
+
+http_requests:
+    description_enable:
+        name: "Enable Function 1"
+        url: "https://example.it/12345"
+        type: "post"
+        headers:
+            Content-Type: "application/json"
+        body:
+            enabled:
+                choices:
+                    - true
+                    - false
+            userID:
+                default: "123456"
+            otherID:
+                description: "Function 1"
+                choices:
+                    - 2
+                    - 4
+    user_verification:
+        name: "User Verification"
+        url: "https://example.it/user-verification"
+        type: "post"
+        headers:
+            Source: "test"
+            Content-Type: "application/json"
+        body:
+            userId:
+                default: "123456"
+            type:
+                choices:
+                    - "passport"
+            status:
+                choices:
+                    - true
+                    - false
+            statusType:
+                default: "verified"
+            source:
+                default: "postman"
+            date:
+                default: "2019-10-12T07:20:50.52Z"
+    get_item_params:
+        name: "Get some item's params"
+        url: "http://example.it/item"
+        type: "post"
+        headers:
+            Content-Type: "application/json"
+        body:
+            fields:
+                default:
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                    - 5
+                    - 6
+                    - 7
+                    - 8
+                    - 11
+                    - 13
+                    - 14
+                    - 16
+                    - 17
+                    - 18
+                    - 19
+                    - 22
+                    - 24
+                    - 34
+                    - 35
+                    - 36
+                    - 37
+                    - 38
+                    - 39
+                    - 40
+                    - 41
+                    - 44
+                    - 45
+                    - 46
+                    - 47
+                    - 51
+                    - 56
+                    - 57
+                    - 58
+                    - 59
+                    - 60
+                    - 61
+                    - 62
+                    - 65
+                    - 66
+                    - 67
+                    - 68
+                    - 69
+                    - 70
+                    - 86
+                    - 87
+                    - 99
+                    - 100
+                    - 101
+                    - 102
+                    - 103
+                    - 104
+                    - 105
+                    - 1000
+                    - 1001
+            ids:
+                default:
+                    - "12345"
+            otherParam:
+                default: false
+    complete_check:
+        name: "Complete check"
+        url: "https://example.it/check/{item_id}/user/1956/approvecheck"
+        type: "post"
