@@ -6,14 +6,14 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
 
-from core import Parser
+from core import StructureParser
 
 
 class MainWindow(QWidget):
     def __init__(self, exit_callback):
         super().__init__()
         self.exit_callback = exit_callback
-        self.config = Parser()
+        self.config = StructureParser()
         self.init_ui()
         self._center()
 

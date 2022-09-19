@@ -1,51 +1,14 @@
-from dataclasses import dataclass, field
-import re
 
+
+import requests
 import yaml
+from structure import Request, Structure
 
 
 STRUCTURE_FILE = "structure.yml"
 
 
-@dataclass
-class RequestParam:
-    choices: list = field(default_factory=list)
-    text: str = None
-    description: str = ""
-
-
-@dataclass
-class Request:
-    name: str
-    url: str
-    type: str
-    headers: dict = field(default_factory=dict)
-    body: dict = field(default_factory=dict)
-    params: dict[str, RequestParam] = field(init=False)
-
-    def __post_init__(self):
-        self.params = {}
-        url_keys = re.findall(r"\{.*}", self.url)
-        for item in url_keys:
-            kv = item.strip("{}")
-            self.params[kv] = RequestParam(text=kv)
-        for key, value in self.body.items():
-            params = {}
-            if text := value.get("default"):
-                params["text"] = str(text)
-            if description := value.get("description"):
-                params["description"] = description
-            if choices := value.get("choices"):
-                params["choices"] = choices
-            self.params[key] = RequestParam(**params)
-
-
-@dataclass
-class Structure:
-    http_requests: dict[str, Request]
-
-
-class Parser:
+class StructureParser:
     def __init__(self):
         self.structure_file_name = STRUCTURE_FILE
         self.parsed = self._parse()
@@ -69,3 +32,15 @@ class Parser:
                 params["body"] = body
             http_requests[key] = Request(**params)
         return Structure(http_requests)
+
+
+def request(request_object: Request):
+    response = requests.request(
+        method=request_object.method,
+        url=request_object.url,
+        headers=request_object.headers,
+        json=request_object.body
+    )
+    # if response.status_code not in (requests.codes.ok, requests.codes.created):
+    #     pass
+    return response.content
