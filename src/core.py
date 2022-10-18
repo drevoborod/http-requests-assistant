@@ -2,7 +2,7 @@
 
 import requests
 import yaml
-from structure import Request, Structure
+from structure import Request, Structure, ParamTypes
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -21,25 +21,49 @@ class StructureParser:
     def _prepare(self):
         http_requests = {}
         for key, value in self.parsed["http_requests"].items():
-            params = dict(
+            data = dict(
                 name=value["name"],
                 url=value["url"],
-                type=value["type"]
+                method=value["method"]
             )
             if headers := value.get("headers"):
-                params["headers"] = headers
+                data["headers"] = headers
             if body := value.get("body"):
-                params["body"] = body
-            http_requests[key] = Request(**params)
+                data["body"] = body
+            if query_params := value.get("query_params"):
+                data["query_params"] = query_params
+            http_requests[key] = Request(**data)
         return Structure(http_requests)
 
 
-def request(request_object: Request):
+def send_request(request_object: Request):
+    print(request_object)
+    url = request_object.url
+    body = {}
+    url_params = {}
+    query_params = {}
+    headers = {}
+    for name, value in request_object.params.items():
+
+        match value.param_type:
+            case ParamTypes.url:
+                url_params[name] = value.current_value
+            case ParamTypes.query:
+                query_params[name] = value.current_value
+            case ParamTypes.body:
+                body[name] = value.current_value
+            case ParamTypes.header:
+                headers[name] = value.current_value
+    for name, value in url_params.items():
+        url = url.replace("{" + name + "}", value)
+    # for x in (url, body, url_params, headers, query_params):
+    #     print(x)
     response = requests.request(
         method=request_object.method,
-        url=request_object.url,
-        headers=request_object.headers,
-        json=request_object.body
+        url=url,
+        params=query_params,
+        headers=headers,
+        json=body
     )
     # if response.status_code not in (requests.codes.ok, requests.codes.created):
     #     pass

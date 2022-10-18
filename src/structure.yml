@@ -1,26 +1,40 @@
-## body rules:
-# if "properties" exists: it's an object
-# if "items" exists: it's a list
-# if "choices" exists: list of possible values should be displayed
-# if "default" exists: default value(s) should be entered to text area
+## url rules:
+# parts in curl braces will be parsed as adjustable parameters,
+#   e.g.: in "http://example.com/path/{param1}/something" "param1" will be replaced with actual value set by user in GUI
+#   and curl braces will be removed.
+# URL should contain protocol.
 
-# ToDo: добавить ключ url_params для параметров в url по тому же принципу, что и в body.
-# ToDo: то же самое - для заголовков.
+## headers, body and query_params rules (for every item):
+# if "choices" exists: list of possible values will be displayed
+# if "text" exists: default value(s) will be entered to text area
+
+# ToDo: поддержать одинаковые динамические части урла (словарь не годится - одинаковые ключи затираются).
+# ToDo: поддержать одноимённые параметры в разных частях - query, body и т.д. (та же проблема с ключами).
 
 http_requests:
     description_enable:
         name: "Enable Function 1"
-        url: "https://example.it/12345"
+        url: "https://example.it/{test_1}/12345/{test_1}/my_endpoint"
         method: "post"
         headers:
-            Content-Type: "application/json"
+            Content-Type:
+                text: "application/json"
+        query_params:
+            param1:
+                text: "654321"
+            param2:
+                choices:
+                    - 7
+                    - 8
+                    - 9
+                    - 10
         body:
             enabled:
                 choices:
                     - true
                     - false
             userID:
-                default: "123456"
+                text: "123456"
             otherID:
                 description: "Function 1"
                 choices:
@@ -31,11 +45,13 @@ http_requests:
         url: "https://example.it/user-verification"
         method: "post"
         headers:
-            Source: "test"
-            Content-Type: "application/json"
+            Source:
+                text: "test"
+            Content-Type:
+                text: "application/json"
         body:
             userId:
-                default: "123456"
+                text: "123456"
             method:
                 choices:
                     - "passport"
@@ -44,20 +60,21 @@ http_requests:
                     - true
                     - false
             statusType:
-                default: "verified"
+                text: "verified"
             source:
-                default: "postman"
+                text: "postman"
             date:
-                default: "2019-10-12T07:20:50.52Z"
+                text: "2019-10-12T07:20:50.52Z"
     get_item_params:
         name: "Get some item's params"
         url: "http://example.it/item"
         method: "post"
         headers:
-            Content-Type: "application/json"
+            Content-Type:
+                text: "application/json"
         body:
             fields:
-                default:
+                text:
                     - 1
                     - 2
                     - 3
@@ -113,10 +130,10 @@ http_requests:
                     - 1000
                     - 1001
             ids:
-                default:
+                text:
                     - "12345"
             otherParam:
-                default: false
+                text: false
     complete_check:
         name: "Complete check"
         url: "https://example.it/check/{item_id}/user/1956/approvecheck"

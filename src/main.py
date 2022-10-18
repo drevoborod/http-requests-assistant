@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
 
-from core import StructureParser
+from core import StructureParser, send_request
+from structure import Request, RequestParam
 
 
 class MainWindow(QWidget):
@@ -63,7 +64,7 @@ class ScrollableFrame(QFrame):
 
 class RequestsFrame(ScrollableFrame):
     """Frame with all HTTP requests."""
-    def __init__(self, parent, http_requests):
+    def __init__(self, parent, http_requests: dict[str, Request]):
         super().__init__(parent)
         self.http_requests = http_requests
         self.init_ui()
@@ -75,9 +76,12 @@ class RequestsFrame(ScrollableFrame):
 
 class HTTPRequestFrame(QFrame):
     """HTTP request configure area."""
-    def __init__(self, parent, http_request_data):
+    def __init__(self, parent, http_request_data: Request):
         super().__init__(parent)
         self.http_request_data = http_request_data
+        ##### print(self.http_request_data)
+        # Container for graphical objects of corresponding request params:
+        self.params_mapping = dict.fromkeys(self.http_request_data.params)
         self.init_ui()
 
     def init_ui(self):
@@ -96,22 +100,30 @@ class HTTPRequestFrame(QFrame):
         url_frame.setLayout(url_frame_layout)
 
         send_button = QPushButton("Send", self)
+        send_button.clicked.connect(self.send)
 
         grid = QGridLayout(self)
         grid.addWidget(title, 0, 0)
         grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
         grid.addWidget(url_frame, 1, 0, 1, 2)
         for number, param in enumerate(self.http_request_data.params.items(), start=2):
-            grid.addWidget(ParamRow(self, *param), number, 0, 1, 2)
+            self.params_mapping[param[0]] = ParamRow(self, *param)
+            grid.addWidget(self.params_mapping[param[0]], number, 0, 1, 2)
         self.setLayout(grid)
+
+    def send(self):
+        for key, param in self.http_request_data.params.items():
+            param.current_value = self.params_mapping[key].value
+        send_request(self.http_request_data)
 
 
 class ParamRow(QFrame):
     """HTTP request parameter value area."""
-    def __init__(self, parent, request_param_name, request_param):
+    def __init__(self, parent, request_param_name: str, request_param: RequestParam):
         super().__init__(parent)
         self.request_param_name = request_param_name
         self.request_param = request_param
+        self._area = None
         self.init_ui()
 
     def init_ui(self):
@@ -123,14 +135,14 @@ class ParamRow(QFrame):
         name.setFrameShape(QFrame.Box)
 
         if self.request_param.text:
-            area = QLineEdit(self)
-            area.setText(self.request_param.text)
+            self._area = QLineEdit(self)
+            self._area.setText(self.request_param.text)
         else:
-            area = QComboBox(self)
-            area.addItems(map(str, self.request_param.choices))
+            self._area = QComboBox(self)
+            self._area.addItems(map(str, self.request_param.choices))
 
         grid.addWidget(name, 0, 0, alignment=Qt.AlignLeft)
-        grid.addWidget(area, 0, 1)
+        grid.addWidget(self._area, 0, 1)
         #if self.request_param.description:
         descr_title = QLabel("Description:", self)
         descr_value = QLineEdit(self)
@@ -140,6 +152,14 @@ class ParamRow(QFrame):
         grid.addWidget(descr_value, 1, 1)
 
         self.setLayout(grid)
+
+    @property
+    def value(self):
+        """Returns adjustable parameter's value"""
+        if isinstance(self._area, QLineEdit):
+            return self._area.text()
+        elif isinstance(self._area, QComboBox):
+            return self._area.currentText()
 
 
 if __name__ == "__main__":
