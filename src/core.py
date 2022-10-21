@@ -39,25 +39,14 @@ class StructureParser:
 def send_request(request_object: Request):
     print(request_object)
     url = request_object.url
-    body = {}
-    url_params = {}
-    query_params = {}
-    headers = {}
-    for name, value in request_object.params.items():
-
-        match value.param_type:
-            case ParamTypes.url:
-                url_params[name] = value.current_value
-            case ParamTypes.query:
-                query_params[name] = value.current_value
-            case ParamTypes.body:
-                body[name] = value.current_value
-            case ParamTypes.header:
-                headers[name] = value.current_value
-    for name, value in url_params.items():
+    body = {name: value.current_value for name, value in request_object.parsed_body.items()}
+    url_parts = {name: value.current_value for name, value in request_object.parsed_url_parts.items()}
+    query_params = {name: value.current_value for name, value in request_object.parsed_query_params.items()}
+    headers = {name: value.current_value for name, value in request_object.parsed_headers.items()}
+    for name, value in url_parts.items():
         url = url.replace("{" + name + "}", value)
-    # for x in (url, body, url_params, headers, query_params):
-    #     print(x)
+    for x in (url, body, url_parts, headers, query_params):
+        print(x)
     response = requests.request(
         method=request_object.method,
         url=url,

@@ -79,9 +79,11 @@ class HTTPRequestFrame(QFrame):
     def __init__(self, parent, http_request_data: Request):
         super().__init__(parent)
         self.http_request_data = http_request_data
-        ##### print(self.http_request_data)
         # Container for graphical objects of corresponding request params:
-        self.params_mapping = dict.fromkeys(self.http_request_data.params)
+        self.url_parts_mapping = dict.fromkeys(self.http_request_data.parsed_url_parts)
+        self.query_params_mapping = dict.fromkeys(self.http_request_data.parsed_query_params)
+        self.body_mapping = dict.fromkeys(self.http_request_data.parsed_body)
+        self.headers_mapping = dict.fromkeys(self.http_request_data.parsed_headers)
         self.init_ui()
 
     def init_ui(self):
@@ -106,14 +108,33 @@ class HTTPRequestFrame(QFrame):
         grid.addWidget(title, 0, 0)
         grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
         grid.addWidget(url_frame, 1, 0, 1, 2)
-        for number, param in enumerate(self.http_request_data.params.items(), start=2):
-            self.params_mapping[param[0]] = ParamRow(self, *param)
-            grid.addWidget(self.params_mapping[param[0]], number, 0, 1, 2)
+        start = 2
+        for number, param in enumerate(self.http_request_data.parsed_url_parts.items(), start=start):
+            self.url_parts_mapping[param[0]] = ParamRow(self, *param)
+            grid.addWidget(self.url_parts_mapping[param[0]], number, 0, 1, 2)
+            start = number
+        for number, param in enumerate(self.http_request_data.parsed_query_params.items(), start=start+1):
+            self.query_params_mapping[param[0]] = ParamRow(self, *param)
+            grid.addWidget(self.query_params_mapping[param[0]], number, 0, 1, 2)
+            start = number
+        for number, param in enumerate(self.http_request_data.parsed_headers.items(), start=start+1):
+            self.headers_mapping[param[0]] = ParamRow(self, *param)
+            grid.addWidget(self.headers_mapping[param[0]], number, 0, 1, 2)
+            start = number
+        for number, param in enumerate(self.http_request_data.parsed_body.items(), start=start+1):
+            self.body_mapping[param[0]] = ParamRow(self, *param)
+            grid.addWidget(self.body_mapping[param[0]], number, 0, 1, 2)
         self.setLayout(grid)
 
     def send(self):
-        for key, param in self.http_request_data.params.items():
-            param.current_value = self.params_mapping[key].value
+        for key, param in self.http_request_data.parsed_url_parts.items():
+            param.current_value = self.url_parts_mapping[key].value
+        for key, param in self.http_request_data.parsed_query_params.items():
+            param.current_value = self.query_params_mapping[key].value
+        for key, param in self.http_request_data.parsed_headers.items():
+            param.current_value = self.headers_mapping[key].value
+        for key, param in self.http_request_data.parsed_body.items():
+            param.current_value = self.body_mapping[key].value
         send_request(self.http_request_data)
 
 

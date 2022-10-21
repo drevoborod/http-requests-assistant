@@ -9,7 +9,6 @@
 # if "text" exists: default value(s) will be entered to text area
 
 # ToDo: поддержать одинаковые динамические части урла (словарь не годится - одинаковые ключи затираются).
-# ToDo: поддержать одноимённые параметры в разных частях - query, body и т.д. (та же проблема с ключами).
 
 http_requests:
     description_enable:
@@ -20,7 +19,7 @@ http_requests:
             Content-Type:
                 text: "application/json"
         query_params:
-            param1:
+            test_1:
                 text: "654321"
             param2:
                 choices:
@@ -35,7 +34,7 @@ http_requests:
                     - false
             userID:
                 text: "123456"
-            otherID:
+            test_1:
                 description: "Function 1"
                 choices:
                     - 2
