@@ -30,8 +30,12 @@ http_requests:
                 choices:
                     - true
                     - false
-            userID:
+            ID:
                 text: "123456"
+            userIDs:
+                text: "[123, 456, 789]"
+            data:
+                text: '{"param1": 11, "param2": 12}'
             test_1:
                 description: "Function 1"
                 choices:
