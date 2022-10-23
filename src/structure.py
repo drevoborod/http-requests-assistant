@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 import re
 
 
+URL_PARTS_TEMPLATE = r"\{.*?}"
+
 class ParamTypes:
     url = 1
     query = 2
@@ -29,14 +31,14 @@ class Request:
     parsed_headers: dict[str, RequestParam] = field(init=False)
     parsed_body: dict[str, RequestParam] = field(init=False)
     parsed_query_params: dict[str, RequestParam] = field(init=False)
-    parsed_url_parts: dict[str, RequestParam] = field(init=False)
+    parsed_url_parts: list[RequestParam] = field(init=False)
 
     def __post_init__(self):
-        self.parsed_url_parts = {}
-        url_keys = re.findall(r"\{.*?}", self.url)
+        self.parsed_url_parts = []
+        url_keys = re.findall(URL_PARTS_TEMPLATE, self.url)
         for item in url_keys:
             kv = item.strip("{}")
-            self.parsed_url_parts[kv] = RequestParam(text=kv)
+            self.parsed_url_parts.append(RequestParam(text=kv))
         self.parsed_body = self._prepare_params(self.body)
         self.parsed_query_params = self._prepare_params(self.query_params)
         self.parsed_headers = self._prepare_params(self.headers)

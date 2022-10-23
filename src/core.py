@@ -1,8 +1,9 @@
-
+import re
+from itertools import zip_longest
 
 import requests
 import yaml
-from structure import Request, Structure, ParamTypes
+from structure import Request, Structure, URL_PARTS_TEMPLATE
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -38,22 +39,23 @@ class StructureParser:
 
 def send_request(request_object: Request):
     print(request_object)
-    url = request_object.url
+    url_parts = [value.current_value for value in request_object.parsed_url_parts]
     body = {name: value.current_value for name, value in request_object.parsed_body.items()}
-    url_parts = {name: value.current_value for name, value in request_object.parsed_url_parts.items()}
     query_params = {name: value.current_value for name, value in request_object.parsed_query_params.items()}
     headers = {name: value.current_value for name, value in request_object.parsed_headers.items()}
-    for name, value in url_parts.items():
-        url = url.replace("{" + name + "}", value)
+    splitted_url = re.split(URL_PARTS_TEMPLATE, request_object.url)
+    url = "".join([item for sublist in zip_longest(splitted_url, url_parts, fillvalue="") for item in sublist])
+    # for name, value in url_parts.items():
+    #     url = url.replace("{" + name + "}", value)
     for x in (url, body, url_parts, headers, query_params):
         print(x)
-    response = requests.request(
-        method=request_object.method,
-        url=url,
-        params=query_params,
-        headers=headers,
-        json=body
-    )
-    # if response.status_code not in (requests.codes.ok, requests.codes.created):
-    #     pass
-    return response.content
+    # response = requests.request(
+    #     method=request_object.method,
+    #     url=url,
+    #     params=query_params,
+    #     headers=headers,
+    #     json=body
+    # )
+    # # if response.status_code not in (requests.codes.ok, requests.codes.created):
+    # #     pass
+    # return response.content

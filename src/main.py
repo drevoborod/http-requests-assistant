@@ -2,9 +2,8 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QStyle, QSizePolicy, QHBoxLayout, QMainWindow
 )
-
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
+# from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
 
 from core import StructureParser, send_request
 from structure import Request, RequestParam
@@ -80,7 +79,7 @@ class HTTPRequestFrame(QFrame):
         super().__init__(parent)
         self.http_request_data = http_request_data
         # Container for graphical objects of corresponding request params:
-        self.url_parts_mapping = dict.fromkeys(self.http_request_data.parsed_url_parts)
+        self.url_parts_list = []
         self.query_params_mapping = dict.fromkeys(self.http_request_data.parsed_query_params)
         self.body_mapping = dict.fromkeys(self.http_request_data.parsed_body)
         self.headers_mapping = dict.fromkeys(self.http_request_data.parsed_headers)
@@ -109,10 +108,10 @@ class HTTPRequestFrame(QFrame):
         grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
         grid.addWidget(url_frame, 1, 0, 1, 2)
         start = 2
-        for number, param in enumerate(self.http_request_data.parsed_url_parts.items(), start=start):
-            self.url_parts_mapping[param[0]] = ParamRow(self, *param)
-            grid.addWidget(self.url_parts_mapping[param[0]], number, 0, 1, 2)
-            start = number
+        for number, param in enumerate(self.http_request_data.parsed_url_parts, start=start):
+            self.url_parts_list.append(ParamRow(self, f"URL adjustable part {number - start + 1}", param))
+            grid.addWidget(self.url_parts_list[number - start], number, 0, 1, 2)
+        start = len(self.url_parts_list) + start
         for number, param in enumerate(self.http_request_data.parsed_query_params.items(), start=start+1):
             self.query_params_mapping[param[0]] = ParamRow(self, *param)
             grid.addWidget(self.query_params_mapping[param[0]], number, 0, 1, 2)
@@ -127,8 +126,8 @@ class HTTPRequestFrame(QFrame):
         self.setLayout(grid)
 
     def send(self):
-        for key, param in self.http_request_data.parsed_url_parts.items():
-            param.current_value = self.url_parts_mapping[key].value
+        for number, param in enumerate(self.http_request_data.parsed_url_parts):
+            param.current_value = self.url_parts_list[number].value
         for key, param in self.http_request_data.parsed_query_params.items():
             param.current_value = self.query_params_mapping[key].value
         for key, param in self.http_request_data.parsed_headers.items():
