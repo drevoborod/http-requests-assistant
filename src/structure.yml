@@ -5,8 +5,9 @@
 # URL should contain protocol.
 
 ## headers, body and query_params rules (for every item):
-# if "choices" exists: list of possible values will be displayed
+# if "choices" exists: dropdown list of possible values will be displayed
 # if "text" exists: default value(s) will be entered to text area
+# "text" parameter supports JSON
 
 http_requests:
     description_enable:

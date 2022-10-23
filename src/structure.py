@@ -4,6 +4,7 @@ import re
 
 URL_PARTS_TEMPLATE = r"\{.*?}"
 
+
 class ParamTypes:
     url = 1
     query = 2
