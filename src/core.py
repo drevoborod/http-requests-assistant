@@ -40,7 +40,7 @@ class StructureParser:
 
 def send_request(request_object: Request):
     ###
-    print(request_object)
+    # print(request_object)
     ###
     url_parts = [value.current_value for value in request_object.parsed_url_parts]
     body = {name: value.current_value for name, value in request_object.parsed_body.items()}
@@ -56,16 +56,16 @@ def send_request(request_object: Request):
         else:
             body[key] = replace
     ###
-    for x in (url, body, url_parts, headers, query_params):
-        print(x)
+    # for x in (url, body, url_parts, headers, query_params):
+    #     print(x)
     ###
-    response = requests.request(
-        method=request_object.method,
-        url=url,
-        params=query_params,
-        headers=headers,
-        json=body
-    )
-    # if response.status_code not in (requests.codes.ok, requests.codes.created):
-    #     pass
-    return response.content
+    try:
+        return requests.request(
+            method=request_object.method,
+            url=url,
+            params=query_params,
+            headers=headers,
+            json=body
+        )
+    except requests.exceptions.RequestException as err:
+        return err
