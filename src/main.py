@@ -36,32 +36,6 @@ class MainWindow(QWidget):
         self.move(qr.topLeft())
 
 
-class ScrollableFrame(QFrame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.scrollable_box = self._prepare_scroll_area()
-
-    def _prepare_scroll_area(self):
-        area = QFrame(self)
-        #area.setMinimumSize(100, 100)
-        scroll_area = QScrollArea()
-
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(area)
-
-        #self.setGeometry(600, 100, 1000, 900)
-
-        scrollable_box = QVBoxLayout(area)
-        area.setLayout(scrollable_box)
-        vbox = QVBoxLayout(self)
-        vbox.addWidget(area)
-        self.setLayout(vbox)
-
-        return scrollable_box
-
-
 class RequestsFrame(QFrame):
     """Frame with all HTTP requests."""
     def __init__(self, parent, http_requests: dict[str, Request]):
