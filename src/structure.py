@@ -28,7 +28,7 @@ class Request:
     headers: dict = field(default_factory=dict)
     body: dict = field(default_factory=dict)
     query_params: dict = field(default_factory=dict)
-    # all adjustable parameters including URL parts is curl braces, query parameters, headers and body parameters:
+    # all adjustable parameters including URL parts in curl braces, query parameters, headers and body parameters:
     parsed_headers: dict[str, RequestParam] = field(init=False)
     parsed_body: dict[str, RequestParam] = field(init=False)
     parsed_query_params: dict[str, RequestParam] = field(init=False)

@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
-    QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QStyle, QSizePolicy, QHBoxLayout, QMainWindow
+    QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QStyle, QSizePolicy, QHBoxLayout, QMainWindow, QFormLayout,
+    QGroupBox
 )
 from PyQt5.QtCore import Qt, QSize
 # from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
@@ -61,7 +62,7 @@ class ScrollableFrame(QFrame):
         return scrollable_box
 
 
-class RequestsFrame(ScrollableFrame):
+class RequestsFrame(QFrame):
     """Frame with all HTTP requests."""
     def __init__(self, parent, http_requests: dict[str, Request]):
         super().__init__(parent)
@@ -69,8 +70,19 @@ class RequestsFrame(ScrollableFrame):
         self.init_ui()
 
     def init_ui(self):
+        form_layout = QFormLayout()
         for item in self.http_requests.values():
-            self.scrollable_box.addWidget(HTTPRequestFrame(self, item))
+            form_layout.addRow(item.name, HTTPRequestFrame(self, item))
+
+        group_box = QFrame()
+        group_box.setLayout(form_layout)
+        scroll_area = QScrollArea()
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll_area.setWidget(group_box)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setMinimumWidth(600)
+        layout = QVBoxLayout(self)
+        layout.addWidget(scroll_area)
 
 
 class HTTPRequestFrame(QFrame):
