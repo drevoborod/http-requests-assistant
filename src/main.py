@@ -1,10 +1,9 @@
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
-    QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QStyle, QSizePolicy, QHBoxLayout, QMainWindow, QFormLayout,
-    QGroupBox, QDialog, QMessageBox, QDialogButtonBox, QPlainTextEdit
+    QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
+    QDialog, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtCore import Qt, QSize
-# from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
+from PyQt5.QtCore import Qt
 
 from core import StructureParser, send_request
 from structure import Request, RequestParam
@@ -16,7 +15,7 @@ class MainWindow(QWidget):
         self.exit_callback = exit_callback
         self.config = StructureParser()
         self.init_ui()
-        center_widget(self)
+        self._center()
 
     def init_ui(self):
         self.setWindowTitle("Universal QA helper")
@@ -25,6 +24,15 @@ class MainWindow(QWidget):
         main_grid.addWidget(requests_frame, 0, 0)
         self.setLayout(main_grid)
         self.show()
+
+    def _center(self):
+        width = QDesktopWidget().availableGeometry().size().width() // 100 * 75
+        height = QDesktopWidget().availableGeometry().size().height() // 100 * 75
+        self.setGeometry(0, 0, width, height)
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 
 class RequestsFrame(QFrame):
@@ -130,7 +138,7 @@ class HTTPRequestFrame(QFrame):
         layout.addWidget(button_box)
         result_dialogue.setLayout(layout)
 
-        center_widget(result_dialogue)
+        center_dialogue_window(result_dialogue, self)
         result_dialogue.show()
 
 
@@ -160,7 +168,6 @@ class ParamRow(QFrame):
 
         grid.addWidget(name, 0, 0, alignment=Qt.AlignLeft)
         grid.addWidget(self._area, 0, 1)
-        #if self.request_param.description:
         descr_title = QLabel("Description:", self)
         descr_value = QLineEdit(self)
         descr_value.setText(self.request_param.description)
@@ -179,25 +186,13 @@ class ParamRow(QFrame):
             return self._area.currentText()
 
 
-class ResultMessageBox(QDialog):
-    def __init__(self, data: str):
-        super().__init__()
-        self.data = data
-        self.init_ui()
-
-    def init_ui(self):
-        self.setModal(True)
-        self.show()
-
-
-def center_widget(widget):
-    width = QDesktopWidget().availableGeometry().size().width() // 100 * 75
-    height = QDesktopWidget().availableGeometry().size().height() // 100 * 75
-    widget.setGeometry(0, 0, width, height)
-    qr = widget.frameGeometry()
-    cp = QDesktopWidget().availableGeometry().center()
-    qr.moveCenter(cp)
-    widget.move(qr.topLeft())
+def center_dialogue_window(widget, source_widget):
+    pos_x = source_widget.frameGeometry().x()
+    pos_y = source_widget.frameGeometry().y()
+    width = source_widget.frameGeometry().width() // 100 * 50
+    height = source_widget.frameGeometry().height() // 100 * 50
+    widget.setGeometry(pos_x, pos_y, width, height)
+    widget.move(pos_x + 50, pos_y + 50)
 
 
 if __name__ == "__main__":
