@@ -4,6 +4,7 @@ from itertools import zip_longest
 
 import requests
 import yaml
+
 from structure import Request, Structure, URL_PARTS_TEMPLATE
 
 
@@ -60,7 +61,7 @@ def send_request(request_object: Request):
     #     print(x)
     ###
     try:
-        return requests.request(
+        response = requests.request(
             method=request_object.method,
             url=url,
             params=query_params,
@@ -68,4 +69,9 @@ def send_request(request_object: Request):
             json=body
         )
     except requests.exceptions.RequestException as err:
-        return err
+        return str(err)
+    else:
+        try:
+            return json.dumps(response.json(), indent=4)
+        except Exception:
+            return response.content.decode(encoding="utf-8")

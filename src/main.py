@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QStyle, QSizePolicy, QHBoxLayout, QMainWindow, QFormLayout,
-    QGroupBox
+    QGroupBox, QDialog, QMessageBox, QDialogButtonBox, QPlainTextEdit
 )
 from PyQt5.QtCore import Qt, QSize
 # from PyQt5.QtGui import QPalette, QBrush, QColor, QIcon
@@ -16,7 +16,7 @@ class MainWindow(QWidget):
         self.exit_callback = exit_callback
         self.config = StructureParser()
         self.init_ui()
-        self._center()
+        center_widget(self)
 
     def init_ui(self):
         self.setWindowTitle("Universal QA helper")
@@ -25,15 +25,6 @@ class MainWindow(QWidget):
         main_grid.addWidget(requests_frame, 0, 0)
         self.setLayout(main_grid)
         self.show()
-
-    def _center(self):
-        width = QDesktopWidget().availableGeometry().size().width() // 100 * 75
-        height = QDesktopWidget().availableGeometry().size().height() // 100 * 75
-        self.setGeometry(0, 0, width, height)
-        qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
 
 
 class RequestsFrame(QFrame):
@@ -120,7 +111,27 @@ class HTTPRequestFrame(QFrame):
             param.current_value = self.headers_mapping[key].value
         for key, param in self.http_request_data.parsed_body.items():
             param.current_value = self.body_mapping[key].value
-        send_request(self.http_request_data)
+        self.show_result(send_request(self.http_request_data))
+
+    def show_result(self, data: str):
+        result_dialogue = QDialog(self)
+        result_dialogue.setWindowTitle(f'Response for "{self.http_request_data.name}"')
+
+        text_area = QPlainTextEdit(result_dialogue)
+        text_area.setReadOnly(True)
+        text_area.setPlainText(data)
+
+        buttons = QDialogButtonBox.Ok
+        button_box = QDialogButtonBox(buttons)
+        button_box.accepted.connect(result_dialogue.accept)
+
+        layout = QVBoxLayout()
+        layout.addWidget(text_area)
+        layout.addWidget(button_box)
+        result_dialogue.setLayout(layout)
+
+        center_widget(result_dialogue)
+        result_dialogue.show()
 
 
 class ParamRow(QFrame):
@@ -166,6 +177,27 @@ class ParamRow(QFrame):
             return self._area.text()
         elif isinstance(self._area, QComboBox):
             return self._area.currentText()
+
+
+class ResultMessageBox(QDialog):
+    def __init__(self, data: str):
+        super().__init__()
+        self.data = data
+        self.init_ui()
+
+    def init_ui(self):
+        self.setModal(True)
+        self.show()
+
+
+def center_widget(widget):
+    width = QDesktopWidget().availableGeometry().size().width() // 100 * 75
+    height = QDesktopWidget().availableGeometry().size().height() // 100 * 75
+    widget.setGeometry(0, 0, width, height)
+    qr = widget.frameGeometry()
+    cp = QDesktopWidget().availableGeometry().center()
+    qr.moveCenter(cp)
+    widget.move(qr.topLeft())
 
 
 if __name__ == "__main__":
