@@ -183,7 +183,7 @@ class ParamRow(QFrame):
         if isinstance(self._area, QLineEdit):
             return self._area.text()
         elif isinstance(self._area, QComboBox):
-            return self._area.currentText()
+            return self.request_param.choices[self._area.currentIndex()]
 
 
 def center_dialogue_window(widget, source_widget):
