@@ -73,6 +73,5 @@ def send_request(request_object: Request):
     else:
         try:
             return json.dumps(response.json(), indent=4, ensure_ascii=False)
-            # return str(response.json())
         except Exception:
             return response.content.decode(encoding="utf-8")

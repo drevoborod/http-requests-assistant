@@ -62,12 +62,14 @@ http_requests:
                 choices:
                     - true
                     - false
+                description: Выбирай или проиграешь!
             statusType:
                 text: "verified"
             source:
                 text: "postman"
             date:
                 text: "2019-10-12T07:20:50.52Z"
+                description: "YYYY-MM-DDThh:mm:ss.ms"
     get_item_params:
         name: "Get some item's params"
         url: "http://example.it/item"

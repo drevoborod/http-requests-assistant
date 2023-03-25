@@ -51,6 +51,7 @@ def _convert_postman_request(data: dict) -> dict:
         try:
             parsed_body = json.loads(body_source["raw"])    # should be dictionary
         except Exception:
+            # ToDO: add logging here
             pass
         else:
             result["body"] = {}

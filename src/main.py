@@ -166,12 +166,13 @@ class ParamRow(QFrame):
 
         grid.addWidget(name, 0, 0, alignment=Qt.AlignLeft)
         grid.addWidget(self._area, 0, 1)
-        descr_title = QLabel("Description:", self)
-        descr_value = QLineEdit(self)
-        descr_value.setText(self.request_param.description)
-        descr_value.setDisabled(True)
-        grid.addWidget(descr_title, 1, 0, alignment=Qt.AlignLeft)
-        grid.addWidget(descr_value, 1, 1)
+        if self.request_param.description:
+            descr_title = QLabel("Description:", self)
+            descr_value = QLineEdit(self)
+            descr_value.setText(self.request_param.description)
+            descr_value.setDisabled(True)
+            grid.addWidget(descr_title, 1, 0, alignment=Qt.AlignLeft)
+            grid.addWidget(descr_value, 1, 1)
 
         self.setLayout(grid)
 
