@@ -49,8 +49,11 @@ class Request:
         result = {}
         for key, value in params.items():
             data = {}
-            if text := value.get("text"):
-                data["text"] = str(text)
+            if (text := value.get("text")) is not None:  # support of boolean params in text area
+                if isinstance(text, bool):
+                    data["choices"] = [text, not text]
+                else:
+                    data["text"] = str(text)
             if description := value.get("description"):
                 data["description"] = description
             if choices := value.get("choices"):
