@@ -72,7 +72,6 @@ class HTTPRequestFrame(QFrame):
 
     def init_ui(self):
         self.setFrameShape(QFrame.Panel)
-        title = QLabel(self.http_request_data.name, self)
 
         url_title = QLabel("URL:", self)
         url_value = QLineEdit(self)
@@ -89,7 +88,6 @@ class HTTPRequestFrame(QFrame):
         send_button.clicked.connect(self.send)
 
         grid = QGridLayout(self)
-        grid.addWidget(title, 0, 0)
         grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
         grid.addWidget(url_frame, 1, 0, 1, 2)
         start = 2
