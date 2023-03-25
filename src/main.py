@@ -1,7 +1,8 @@
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
-    QDialog, QDialogButtonBox, QPlainTextEdit
+    QDialog, QDialogButtonBox, QPlainTextEdit, QSizePolicy
 )
 from PyQt5.QtCore import Qt
 
@@ -86,8 +87,13 @@ class HTTPRequestFrame(QFrame):
         url_frame.setFrameShadow(QFrame.Raised)
         url_frame.setLayout(url_frame_layout)
 
-        send_button = QPushButton("Send", self)
+        send_button = QPushButton("Send request", self)
         send_button.clicked.connect(self.send)
+
+        font = self.font()
+        font.setPointSize(font.pointSize() + 1)
+        font.setBold(True)
+        send_button.setFont(font)
 
         grid = QGridLayout(self)
         grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
@@ -175,9 +181,7 @@ class ParamRow(QFrame):
         self.init_ui()
 
     def init_ui(self):
-        self.setFrameShape(QFrame.Box)
         grid = QGridLayout(self)
-        self.setFrameShape(QFrame.NoFrame)
 
         name = QLabel(self.request_param_name, self)
         name.setFrameShape(QFrame.Box)
@@ -189,6 +193,7 @@ class ParamRow(QFrame):
             self._area = QComboBox(self)
             self._area.addItems(map(str, self.request_param.choices))
 
+        self._area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         grid.addWidget(name, 0, 0, alignment=Qt.AlignLeft)
         grid.addWidget(self._area, 0, 1)
         if self.request_param.description:
