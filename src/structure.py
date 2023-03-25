@@ -2,14 +2,7 @@ from dataclasses import dataclass, field
 import re
 
 
-URL_PARTS_TEMPLATE = r"\{.*?}"
-
-
-class ParamTypes:
-    url = 1
-    query = 2
-    body = 3
-    header = 4
+URL_PARTS_TEMPLATE = r"\{(.*?)}"
 
 
 @dataclass
@@ -38,8 +31,7 @@ class Request:
         self.parsed_url_parts = []
         url_keys = re.findall(URL_PARTS_TEMPLATE, self.url)
         for item in url_keys:
-            kv = item.strip("{}")
-            self.parsed_url_parts.append(RequestParam(text=kv))
+            self.parsed_url_parts.append(RequestParam(text=item))
         self.parsed_body = self._prepare_params(self.body)
         self.parsed_query_params = self._prepare_params(self.query_params)
         self.parsed_headers = self._prepare_params(self.headers)
