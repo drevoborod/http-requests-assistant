@@ -8,7 +8,7 @@ import yaml
 from structure import Request, Structure, URL_PARTS_TEMPLATE
 
 
-STRUCTURE_FILE = "structure.yml"
+STRUCTURE_FILE = "postman.yml"
 
 
 class StructureParser:
@@ -72,6 +72,7 @@ def send_request(request_object: Request):
         return str(err)
     else:
         try:
-            return json.dumps(response.json(), indent=4)
+            return json.dumps(response.json(), indent=4, ensure_ascii=False)
+            # return str(response.json())
         except Exception:
             return response.content.decode(encoding="utf-8")
