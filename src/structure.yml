@@ -8,6 +8,7 @@
 # if "choices" exists: dropdown list of possible values will be displayed
 # if "text" exists: default value(s) will be entered to text area
 # "text" parameter supports JSON
+# also "description" parameter can exist.
 
 http_requests:
     description_enable:
