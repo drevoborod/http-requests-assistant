@@ -8,7 +8,7 @@ import yaml
 from structure import Request, Structure, URL_PARTS_TEMPLATE
 
 
-STRUCTURE_FILE = "postman.yml"
+STRUCTURE_FILE = "structure.yml"
 
 
 class StructureParser:
