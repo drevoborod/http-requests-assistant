@@ -47,13 +47,17 @@ def _convert_postman_request(data: dict) -> dict:
 
     body_source = request.get("body")
     # Only JSON body supported yet:
-    if body_source and body_source["mode"] == "raw" and body_source["options"]["raw"]["language"] == "json":
-        parsed_body = json.loads(body_source["raw"])    # should be dictionary
-        result["body"] = {}
-        for key, value in parsed_body.items():
-            if isinstance(value, (dict, list)):
-                value = json.dumps(value)
-            result["body"][key] = {"text": value}
+    if body_source and body_source["mode"] == "raw":
+        try:
+            parsed_body = json.loads(body_source["raw"])    # should be dictionary
+        except Exception:
+            pass
+        else:
+            result["body"] = {}
+            for key, value in parsed_body.items():
+                if isinstance(value, (dict, list)):
+                    value = json.dumps(value)
+                result["body"][key] = {"text": value}
 
     return result
 
@@ -86,4 +90,4 @@ if __name__ == '__main__':
     if not converted[0]:
         sys.exit(converted[1])
     with open(POSTMAN_RESULT_FILE_NAME, "w") as file:
-        yaml.dump(converted[1], file, sort_keys=False, encoding="utf-8", indent=4)
+        yaml.dump(converted[1], file, sort_keys=False, indent=4, allow_unicode=True)
