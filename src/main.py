@@ -73,15 +73,17 @@ class HTTPRequestFrame(QFrame):
     def init_ui(self):
         self.setFrameShape(QFrame.Panel)
 
-        url_title = QLabel("URL:", self)
-        url_value = QLineEdit(self)
-        url_value.setText(self.http_request_data.url)
-        url_value.setReadOnly(True)
-
         url_frame = QFrame(self)
         url_frame_layout = QGridLayout()
+        url_title = QLabel("URL:", url_frame)
+        url_value = QLineEdit(url_frame)
+        url_value.setText(self.http_request_data.url)
+        url_value.setReadOnly(True)
         url_frame_layout.addWidget(url_title, 0, 0)
         url_frame_layout.addWidget(url_value, 0, 1)
+        url_frame.setFrameShape(QFrame.Panel)
+        url_frame.setLineWidth(2)
+        url_frame.setFrameShadow(QFrame.Raised)
         url_frame.setLayout(url_frame_layout)
 
         send_button = QPushButton("Send", self)
@@ -90,23 +92,46 @@ class HTTPRequestFrame(QFrame):
         grid = QGridLayout(self)
         grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
         grid.addWidget(url_frame, 1, 0, 1, 2)
-        start = 2
-        for number, param in enumerate(self.http_request_data.parsed_url_parts, start=start):
-            self.url_parts_list.append(ParamRow(self, f"URL adjustable part {number - start + 1}", param))
-            grid.addWidget(self.url_parts_list[number - start], number, 0, 1, 2)
-        start = len(self.url_parts_list) + start
-        for number, param in enumerate(self.http_request_data.parsed_query_params.items(), start=start+1):
-            self.query_params_mapping[param[0]] = ParamRow(self, *param)
-            grid.addWidget(self.query_params_mapping[param[0]], number, 0, 1, 2)
-            start = number
-        for number, param in enumerate(self.http_request_data.parsed_headers.items(), start=start+1):
-            self.headers_mapping[param[0]] = ParamRow(self, *param)
-            grid.addWidget(self.headers_mapping[param[0]], number, 0, 1, 2)
-            start = number
-        for number, param in enumerate(self.http_request_data.parsed_body.items(), start=start+1):
-            self.body_mapping[param[0]] = ParamRow(self, *param)
-            grid.addWidget(self.body_mapping[param[0]], number, 0, 1, 2)
+
+        if self.http_request_data.parsed_url_parts:
+            url_parts_frame, url_parts_frame_layout = self._create_ui_block("Adjustable URL parts (in curl braces {}):")
+            for number, param in enumerate(self.http_request_data.parsed_url_parts):
+                self.url_parts_list.append(ParamRow(self, f"URL part {number + 1}", param))
+                url_parts_frame_layout.addWidget(self.url_parts_list[number], number + 1, 0, 1, 2)
+            grid.addWidget(url_parts_frame, 2, 0, 1, 2)
+
+        if self.http_request_data.parsed_query_params:
+            query_params_frame, query_params_frame_layout = self._create_ui_block("URL query params:")
+            for number, param in enumerate(self.http_request_data.parsed_query_params.items()):
+                self.query_params_mapping[param[0]] = ParamRow(self, *param)
+                query_params_frame_layout.addWidget(self.query_params_mapping[param[0]], number + 1, 0, 1, 2)
+            grid.addWidget(query_params_frame, 3, 0, 1, 2)
+
+        if self.http_request_data.parsed_headers:
+            headers_frame, headers_frame_layout = self._create_ui_block("Headers:")
+            for number, param in enumerate(self.http_request_data.parsed_headers.items()):
+                self.headers_mapping[param[0]] = ParamRow(self, *param)
+                headers_frame_layout.addWidget(self.headers_mapping[param[0]], number + 1, 0, 1, 2)
+            grid.addWidget(headers_frame, 4, 0, 1, 2)
+
+        if self.http_request_data.parsed_body:
+            body_frame, body_frame_layout = self._create_ui_block("Body params:")
+            for number, param in enumerate(self.http_request_data.parsed_body.items()):
+                self.body_mapping[param[0]] = ParamRow(self, *param)
+                body_frame_layout.addWidget(self.body_mapping[param[0]], number + 1, 0, 1, 2)
+            grid.addWidget(body_frame, 5, 0, 1, 2)
+
         self.setLayout(grid)
+
+    def _create_ui_block(self, title_text: str):
+        frame = QFrame(self)
+        layout = QGridLayout()
+        layout.addWidget(QLabel(title_text, frame), 0, 0, 1, 2)
+        frame.setFrameShape(QFrame.Panel)
+        frame.setLineWidth(2)
+        frame.setFrameShadow(QFrame.Sunken)
+        frame.setLayout(layout)
+        return frame, layout
 
     def send(self):
         for number, param in enumerate(self.http_request_data.parsed_url_parts):
