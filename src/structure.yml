@@ -5,10 +5,10 @@
 # URL should contain protocol.
 
 ## headers, body and query_params rules (for every item):
-# if "choices" exists: dropdown list of possible values will be displayed
-# if "text" exists: default value(s) will be entered to text area
-# "text" parameter supports JSON
-# also "description" parameter can exist.
+# if "__choices__" exists: dropdown list of possible values will be displayed
+# if "__text__" exists: default value(s) will be shown in editable text area
+# "__text__" parameter supports JSON
+# also "__description__" parameter can exist.
 
 http_requests:
     description_enable:
@@ -17,30 +17,30 @@ http_requests:
         method: "post"
         headers:
             Content-Type:
-                text: "application/json"
+                __text__: "application/json"
         query_params:
             test_1:
-                text: "654321"
+                __text__: "654321"
             param2:
-                choices:
+                __choices__:
                     - 17
                     - 8
                     - 9
                     - 10
         body:
             enabled:
-                choices:
+                __choices__:
                     - true
                     - false
             ID:
-                text: "123456"
+                __text__: "123456"
             userIDs:
-                text: "[123, 456, 789]"
+                __text__: "[123, 456, 789]"
             data:
-                text: '{"param1": 11, "param2": 12}'
+                __text__: '{"param1": 11, "param2": 12}'
             test_1:
-                description: "Function 1"
-                choices:
+                __description__: "Function 1"
+                __choices__:
                     - 2
                     - 4
     user_verification:
@@ -49,37 +49,37 @@ http_requests:
         method: "post"
         headers:
             Source:
-                text: "test"
+                __text__: "test"
             Content-Type:
-                text: "application/json"
+                __text__: "application/json"
         body:
             userId:
-                text: "123456"
+                __text__: "123456"
             method:
-                choices:
+                __choices__:
                     - "passport"
             status:
-                choices:
+                __choices__:
                     - true
                     - false
-                description: Выбирай или проиграешь!
+                __description__: Выбирай или проиграешь!
             statusType:
-                text: "verified"
+                __text__: "verified"
             source:
-                text: "postman"
+                __text__: "postman"
             date:
-                text: "2019-10-12T07:20:50.52Z"
-                description: "YYYY-MM-DDThh:mm:ss.ms"
+                __text__: "2019-10-12T07:20:50.52Z"
+                __description__: "YYYY-MM-DDThh:mm:ss.ms"
     get_item_params:
         name: "Get some item's params"
         url: "http://example.it/item"
         method: "post"
         headers:
             Content-Type:
-                text: "application/json"
+                __text__: "application/json"
         body:
             fields:
-                text:
+                __text__:
                     - 1
                     - 2
                     - 3
@@ -135,10 +135,10 @@ http_requests:
                     - 1000
                     - 1001
             ids:
-                text:
+                __text__:
                     - "12345"
             otherParam:
-                text: false
+                __text__: false
     complete_check:
         name: "Complete check"
         url: "https://example.it/check/{item_id}/user/1956/approvecheck"

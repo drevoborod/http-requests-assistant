@@ -5,7 +5,7 @@ from itertools import zip_longest
 import requests
 import yaml
 
-from structure import Request, Structure, URL_PARTS_TEMPLATE
+from structure import Request, Structure, URL_PARTS_TEMPLATE, RequestParams, RootParams
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -23,18 +23,18 @@ class StructureParser:
 
     def _prepare(self):
         http_requests = {}
-        for key, value in self.parsed["http_requests"].items():
+        for key, value in self.parsed[RootParams.http_requests].items():
             data = dict(
-                name=value["name"],
-                url=value["url"],
-                method=value["method"]
+                name=value[RequestParams.name],
+                url=value[RequestParams.url],
+                method=value[RequestParams.method]
             )
-            if headers := value.get("headers"):
-                data["headers"] = headers
-            if body := value.get("body"):
-                data["body"] = body
-            if query_params := value.get("query_params"):
-                data["query_params"] = query_params
+            if headers := value.get(RequestParams.headers):
+                data[RequestParams.headers] = headers
+            if body := value.get(RequestParams.body):
+                data[RequestParams.body] = body
+            if query_params := value.get(RequestParams.query_params):
+                data[RequestParams.query_params] = query_params
             http_requests[key] = Request(**data)
         return Structure(http_requests)
 

@@ -1,4 +1,3 @@
-from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
@@ -91,7 +90,7 @@ class HTTPRequestFrame(QFrame):
         send_button.clicked.connect(self.send)
 
         font = self.font()
-        font.setPointSize(font.pointSize() + 1)
+        font.setPointSize(font.pointSize() + 2)
         font.setBold(True)
         send_button.setFont(font)
 

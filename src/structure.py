@@ -1,15 +1,29 @@
 from dataclasses import dataclass, field
+from enum import Enum
 import re
 
 
-URL_PARTS_TEMPLATE = r"\{.*?}"
+URL_PARTS_TEMPLATE = r"\{(.*?)}"
 
 
-class ParamTypes:
-    url = 1
-    query = 2
-    body = 3
-    header = 4
+class RootParams:
+    http_requests = "http_requests"
+    general = "general"
+
+
+class RequestParams:
+    name = "name"
+    url = "url"
+    method = "method"
+    headers = "headers"
+    query_params = "query_params"
+    body = "body"
+
+
+class NodeParams:
+    choices = "__choices__"
+    description = "__description__"
+    text = "__text__"
 
 
 @dataclass
@@ -38,8 +52,7 @@ class Request:
         self.parsed_url_parts = []
         url_keys = re.findall(URL_PARTS_TEMPLATE, self.url)
         for item in url_keys:
-            kv = item.strip("{}")
-            self.parsed_url_parts.append(RequestParam(text=kv))
+            self.parsed_url_parts.append(RequestParam(text=item))
         self.parsed_body = self._prepare_params(self.body)
         self.parsed_query_params = self._prepare_params(self.query_params)
         self.parsed_headers = self._prepare_params(self.headers)
@@ -49,15 +62,15 @@ class Request:
         result = {}
         for key, value in params.items():
             data = {}
-            if (text := value.get("text")) is not None:  # support of boolean params in text area
+            if (text := value.get(NodeParams.text)) is not None:  # support of boolean params in text area
                 if isinstance(text, bool):
-                    data["choices"] = [text, not text]
+                    data[NodeParams.choices] = [text, not text]
                 else:
-                    data["text"] = str(text)
-            if description := value.get("description"):
-                data["description"] = description
-            if choices := value.get("choices"):
-                data["choices"] = choices
+                    data[NodeParams.text] = str(text)
+            if description := value.get(NodeParams.description):
+                data[NodeParams.description] = description
+            if choices := value.get(NodeParams.choices):
+                data[NodeParams.choices] = choices
             result[key] = RequestParam(**data)
         return result
 
