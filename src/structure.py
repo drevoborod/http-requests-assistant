@@ -31,7 +31,7 @@ class RequestParam:
     choices: list = field(default_factory=list)
     text: str = None
     description: str = ""
-    current_value: str = None   # should be set after user commands to send request.
+    current_value: str = None   # should be set after a user commands to send request.
 
 
 @dataclass

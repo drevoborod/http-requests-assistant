@@ -25,16 +25,16 @@ class StructureParser:
         http_requests = {}
         for key, value in self.parsed[RootParamsNames.http_requests].items():
             data = dict(
-                name=value[RequestParamsNames.name],
-                url=value[RequestParamsNames.url],
-                method=value[RequestParamsNames.method]
+                name=value[RequestParamsNames.name.name],
+                url=value[RequestParamsNames.url.name],
+                method=value[RequestParamsNames.method.name]
             )
             if headers := value.get(RequestParamsNames.headers):
-                data[RequestParamsNames.headers] = headers
+                data[RequestParamsNames.headers.name] = headers
             if body := value.get(RequestParamsNames.body):
-                data[RequestParamsNames.body] = body
+                data[RequestParamsNames.body.name] = body
             if query_params := value.get(RequestParamsNames.query_params):
-                data[RequestParamsNames.query_params] = query_params
+                data[RequestParamsNames.query_params.name] = query_params
             http_requests[key] = Request(**data)
         return Structure(http_requests)
 
