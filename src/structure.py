@@ -6,12 +6,12 @@ import re
 URL_PARTS_TEMPLATE = r"\{(.*?)}"
 
 
-class RootParams:
+class RootParamsNames(str, Enum):
     http_requests = "http_requests"
     general = "general"
 
 
-class RequestParams:
+class RequestParamsNames(str, Enum):
     name = "name"
     url = "url"
     method = "method"
@@ -20,7 +20,7 @@ class RequestParams:
     body = "body"
 
 
-class NodeParams:
+class NodeParamsNames(str, Enum):
     choices = "__choices__"
     description = "__description__"
     text = "__text__"
@@ -62,15 +62,15 @@ class Request:
         result = {}
         for key, value in params.items():
             data = {}
-            if (text := value.get(NodeParams.text)) is not None:  # support of boolean params in text area
+            if (text := value.get(NodeParamsNames.text)) is not None:  # support of boolean params in text area
                 if isinstance(text, bool):
-                    data[NodeParams.choices] = [text, not text]
+                    data[NodeParamsNames.choices.name] = [text, not text]
                 else:
-                    data[NodeParams.text] = str(text)
-            if description := value.get(NodeParams.description):
-                data[NodeParams.description] = description
-            if choices := value.get(NodeParams.choices):
-                data[NodeParams.choices] = choices
+                    data[NodeParamsNames.text.name] = str(text)
+            if description := value.get(NodeParamsNames.description):
+                data[NodeParamsNames.description.name] = description
+            if choices := value.get(NodeParamsNames.choices):
+                data[NodeParamsNames.choices.name] = choices
             result[key] = RequestParam(**data)
         return result
 
