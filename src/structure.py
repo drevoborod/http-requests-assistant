@@ -1,8 +1,29 @@
 from dataclasses import dataclass, field
+from enum import Enum
 import re
 
 
 URL_PARTS_TEMPLATE = r"\{(.*?)}"
+
+
+class RootParamsNames(str, Enum):
+    http_requests = "http_requests"
+    general = "general"
+
+
+class RequestParamsNames(str, Enum):
+    name = "name"
+    url = "url"
+    method = "method"
+    headers = "headers"
+    query_params = "query_params"
+    body = "body"
+
+
+class NodeParamsNames(str, Enum):
+    choices = "__choices__"
+    description = "__description__"
+    text = "__text__"
 
 
 @dataclass
@@ -41,15 +62,15 @@ class Request:
         result = {}
         for key, value in params.items():
             data = {}
-            if (text := value.get("text")) is not None:  # support of boolean params in text area
+            if (text := value.get(NodeParamsNames.text)) is not None:  # support of boolean params in text area
                 if isinstance(text, bool):
-                    data["choices"] = [text, not text]
+                    data[NodeParamsNames.choices.name] = [text, not text]
                 else:
-                    data["text"] = str(text)
-            if description := value.get("description"):
-                data["description"] = description
-            if choices := value.get("choices"):
-                data["choices"] = choices
+                    data[NodeParamsNames.text.name] = str(text)
+            if description := value.get(NodeParamsNames.description):
+                data[NodeParamsNames.description.name] = description
+            if choices := value.get(NodeParamsNames.choices):
+                data[NodeParamsNames.choices.name] = choices
             result[key] = RequestParam(**data)
         return result
 
