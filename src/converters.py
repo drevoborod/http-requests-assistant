@@ -1,9 +1,13 @@
+#!/usr/bin/env python3
+
 import json
 import sys
 from pathlib import Path
 import re
 
 import yaml
+
+from structure import NodeParamsNames, RequestParamsNames, RootParamsNames
 
 
 POSTMAN_SCHEMA_STRING_TEMPLATE = re.compile(r"https://schema\..*postman\.com/.*/(v\d[0-9.]*)/.*\.json")
@@ -24,26 +28,26 @@ def load_json_file(file_path: str) -> (bool, [str, dict]):
 def _convert_postman_request(data: dict) -> dict:
     request = data["request"]
     result = {
-        "name": data["name"],
-        "method": request["method"]
+        RequestParamsNames.name.value: data["name"],
+        RequestParamsNames.method.value: request["method"]
     }
 
     url_source = request["url"]
     if isinstance(url_source, str):
-        result["url"] = url_source
+        result[RequestParamsNames.url.value] = url_source
     else:
         url = [url_source["protocol"] + ":/"]
         url.append(".".join(url_source["host"]))
         url.append("/".join(url_source["path"]))
-        result["url"] = "/".join(url)
+        result[RequestParamsNames.url.value] = "/".join(url)
 
     if isinstance(url_source, dict):
         if query_source := url_source.get("query"):
-            result["query"] = {item["key"]: {"text": item["value"]} for item in query_source}
+            result[RequestParamsNames.query_params.value] = {item["key"]: {NodeParamsNames.text.value: item["value"]} for item in query_source}
 
     headers_source = request.get("header")
     if headers_source:
-        result["headers"] = {item["key"]: {"text": item["value"]} for item in headers_source}
+        result[RequestParamsNames.headers.value] = {item["key"]: {NodeParamsNames.text.value: item["value"]} for item in headers_source}
 
     body_source = request.get("body")
     # Only JSON body supported yet:
@@ -54,11 +58,11 @@ def _convert_postman_request(data: dict) -> dict:
             # ToDO: add logging here
             pass
         else:
-            result["body"] = {}
+            result[RequestParamsNames.body.value] = {}
             for key, value in parsed_body.items():
                 if isinstance(value, (dict, list)):
                     value = json.dumps(value)
-                result["body"][key] = {"text": value}
+                result[RequestParamsNames.body.value][key] = {NodeParamsNames.text.value: value}
 
     return result
 
@@ -76,9 +80,9 @@ def convert_postman_collection(data: dict) -> (bool, [str, dict]):
         return False, error_message + " Invalid schema path."
     if schema_match.group(1) not in SUPPORTED_POSTMAN_SCHEME:
         return False, error_message + " Unsupported schema version."
-    result = {"http_requests": {}}
+    result = {RootParamsNames.http_requests.value: {}}
     for number, request in enumerate(data["item"], start=1):
-        result["http_requests"][f"request{number}"] = _convert_postman_request(request)
+        result[RootParamsNames.http_requests.value][f"request{number}"] = _convert_postman_request(request)
     return True, result
 
 
