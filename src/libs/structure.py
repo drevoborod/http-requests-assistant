@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum   # ToDo: change to TextEnum after switching to Python 3.11
 import re
 
 

@@ -1,0 +1,25 @@
+PARSED_POSITIVE = {'http_requests': {
+    'description_enable': {'name': 'Enable Function 1', 'url': 'https://example.it/{test_1}/12345/{test_1}/my_endpoint',
+                           'method': 'post', 'headers': {'Content-Type': {'__text__': 'application/json'}},
+                           'query_params': {'test_1': {'__text__': '654321'},
+                                            'param2': {'__choices__': [17, 8, 9, 10]}},
+                           'body': {'enabled': {'__choices__': [True, False]}, 'ID': {'__text__': '123456'},
+                                    'userIDs': {'__text__': '[123, 456, 789]'},
+                                    'data': {'__text__': '{"param1": 11, "param2": 12}'},
+                                    'test_1': {'__description__': 'Function 1', '__choices__': [2, 4]}}},
+    'user_verification': {'name': 'User Verification', 'url': 'https://example.it/user-verification', 'method': 'post',
+                          'headers': {'Source': {'__text__': 'test'}, 'Content-Type': {'__text__': 'application/json'}},
+                          'body': {'userId': {'__text__': '123456'}, 'method': {'__choices__': ['passport']},
+                                   'status': {'__choices__': [True, False],
+                                              '__description__': 'Выбирай или проиграешь!'},
+                                   'statusType': {'__text__': 'verified'}, 'source': {'__text__': 'postman'},
+                                   'date': {'__text__': '2019-10-12T07:20:50.52Z',
+                                            '__description__': 'YYYY-MM-DDThh:mm:ss.ms'}}},
+    'get_item_params': {'name': "Get some item's params", 'url': 'http://example.it/item', 'method': 'post',
+                        'headers': {'Content-Type': {'__text__': 'application/json'}}, 'body': {'fields': {
+            '__text__': [1, 2, 3, 4, 5, 6, 7, 8, 11, 13, 14, 16, 17, 18, 19, 22, 24, 34, 35, 36, 37, 38, 39, 40, 41, 44,
+                         45, 46, 47, 51, 56, 57, 58, 59, 60, 61, 62, 65, 66, 67, 68, 69, 70, 86, 87, 99, 100, 101, 102,
+                         103, 104, 105, 1000, 1001]}, 'ids': {'__text__': ['12345']}, 'otherParam': {
+            '__text__': False}}},
+    'complete_check': {'name': 'Complete check', 'url': 'https://example.it/check/{item_id}/user/1956/approvecheck',
+                       'method': 'post'}}}

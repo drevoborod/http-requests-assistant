@@ -7,7 +7,7 @@ import re
 
 import yaml
 
-from structure import NodeParamsNames, RequestParamsNames, RootParamsNames
+from libs.structure import NodeParamsNames, RequestParamsNames, RootParamsNames
 
 
 POSTMAN_SCHEMA_STRING_TEMPLATE = re.compile(r"https://schema\..*postman\.com/.*/(v\d[0-9.]*)/.*\.json")

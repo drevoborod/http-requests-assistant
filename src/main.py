@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
@@ -5,21 +7,21 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from core import StructureParser, send_request
-from structure import Request, RequestParam
+from libs.core import StructureParser, send_request
+from libs.structure import Request, RequestParam
 
 
 class MainWindow(QWidget):
     def __init__(self, exit_callback):
         super().__init__()
         self.exit_callback = exit_callback
-        self.config = StructureParser()
+        self.structure = StructureParser().structure
         self.init_ui()
         self._center()
 
     def init_ui(self):
         self.setWindowTitle("Universal QA helper")
-        requests_frame = RequestsFrame(self, self.config.structure.http_requests)
+        requests_frame = RequestsFrame(self, self.structure.http_requests)
         main_grid = QGridLayout(self)
         main_grid.addWidget(requests_frame, 0, 0)
         self.setLayout(main_grid)

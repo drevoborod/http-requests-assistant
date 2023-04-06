@@ -5,19 +5,27 @@ from itertools import zip_longest
 import requests
 import yaml
 
-from structure import Request, Structure, URL_PARTS_TEMPLATE, RequestParamsNames, RootParamsNames
+from .structure import Request, Structure, URL_PARTS_TEMPLATE, RequestParamsNames, RootParamsNames
 
 
 STRUCTURE_FILE = "structure.yml"
 
 
 class StructureParser:
-    def __init__(self):
-        self.structure_file_name = STRUCTURE_FILE
-        self.parsed = self._parse()
-        self.structure = self._prepare()
+    def __init__(self, structure_file_name=STRUCTURE_FILE):
+        self.structure_file_name = structure_file_name
+        self.parsed = None
+        self._structure = None
 
-    def _parse(self):
+    @property
+    def structure(self):
+        if not self.parsed:
+            self.parsed = self._parse()
+        if not self._structure:
+            self._structure = self._prepare()
+        return self._structure
+
+    def _parse(self) -> dict:
         with open(self.structure_file_name, 'r') as file:
             return yaml.safe_load(file)
 
