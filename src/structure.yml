@@ -5,10 +5,10 @@
 # URL should contain protocol.
 
 ## headers, body and query_params rules (for every item):
-# if "__choices__" exists: dropdown list of possible values will be displayed
-# if "__text__" exists: default value(s) will be shown in editable text area
-# "__text__" parameter supports JSON
-# also "__description__" parameter can exist.
+# if "choices" exists: dropdown list of possible values will be displayed
+# if "text" exists: default value(s) will be shown in editable text area
+# "text" parameter supports JSON
+# also "description" parameter can exist.
 
 http_requests:
     description_enable:
@@ -17,128 +17,180 @@ http_requests:
         method: "post"
         headers:
             Content-Type:
-                __text__: "application/json"
+                text: "application/json"
         query_params:
             test_1:
-                __text__: "654321"
+                text: "654321"
             param2:
-                __choices__:
+                choices:
                     - 17
                     - 8
                     - 9
                     - 10
         body:
-            enabled:
-                __choices__:
-                    - true
-                    - false
-            ID:
-                __text__: "123456"
-            userIDs:
-                __text__: "[123, 456, 789]"
-            data:
-                __text__: '{"param1": 11, "param2": 12}'
-            test_1:
-                __description__: "Function 1"
-                __choices__:
-                    - 2
-                    - 4
+            keys:
+                enabled:
+                    choices:
+                        - true
+                        - false
+                ID:
+                    text: "123456"
+                userIDs:
+                    text: "[123, 456, 789]"
+                test_1:
+                    description: "Function 1"
+                    choices:
+                        - 2
+                        - 4
+                pupil1:
+                    text: Vasya
+                    description: Stupid useless piece of shit
+                pupil2:
+                    text: Petrya
+                    description: A not so stupid piece of shit
+                shelves:
+                    choices:
+                        - 1
+                        - 50
+                        - 33
+                    description: А тут книжки лежат.
+                ID1:
+                    text: 1234321
+            json:
+                data:
+                    enabled: '{{{enabled}}}'
+                    ID: '{{{ID}}}'
+                    test1: '{{{test_1}}}'
+                    param3_dict:
+                        book_name: 'Незнайка'
+                        book_pages: 55
+                        book_authors:
+                            - Носов
+                            - Заносов
+                            - Насосов
+                            - Дихлофосов
+                        readers:
+                            - Smith
+                            - Michelle
+                            - big_class:
+                                  pupil1: '{{{pupil1}}}'
+                                  pupil2: '{{{pupil2}}}'
+
+                            - Angella
+                            - Frodo
+                        shelves: '{{{shelves}}}'
+                        ID: '{{{ID1}}}'
+
     user_verification:
         name: "User Verification"
         url: "https://example.it/user-verification"
         method: "post"
         headers:
             Source:
-                __text__: "test"
+                text: "test"
             Content-Type:
-                __text__: "application/json"
+                text: "application/json"
         body:
-            userId:
-                __text__: "123456"
-            method:
-                __choices__:
-                    - "passport"
-            status:
-                __choices__:
-                    - true
-                    - false
-                __description__: Выбирай или проиграешь!
-            statusType:
-                __text__: "verified"
-            source:
-                __text__: "postman"
-            date:
-                __text__: "2019-10-12T07:20:50.52Z"
-                __description__: "YYYY-MM-DDThh:mm:ss.ms"
+            keys:
+                userId:
+                    text: "123456"
+                method:
+                    choices:
+                        - "passport"
+                status:
+                    choices:
+                        - true
+                        - false
+                    description: Выбирай или проиграешь!
+                statusType:
+                    text: "verified"
+                source:
+                    text: "postman"
+                date:
+                    text: "2019-10-12T07:20:50.52Z"
+                    description: "YYYY-MM-DDThh:mm:ss.ms"
+            json:
+                userId: "{{{userId}}}"
+                method: "{{{method}}}"
+                status: "{{{status}}}"
+                statusType: "{{{statusType}}}"
+                source: '{{{source}}}'
+                date: '{{{date}}}'
+
     get_item_params:
         name: "Get some item's params"
         url: "http://example.it/item"
         method: "post"
         headers:
             Content-Type:
-                __text__: "application/json"
+                text: "application/json"
         body:
-            fields:
-                __text__:
-                    - 1
-                    - 2
-                    - 3
-                    - 4
-                    - 5
-                    - 6
-                    - 7
-                    - 8
-                    - 11
-                    - 13
-                    - 14
-                    - 16
-                    - 17
-                    - 18
-                    - 19
-                    - 22
-                    - 24
-                    - 34
-                    - 35
-                    - 36
-                    - 37
-                    - 38
-                    - 39
-                    - 40
-                    - 41
-                    - 44
-                    - 45
-                    - 46
-                    - 47
-                    - 51
-                    - 56
-                    - 57
-                    - 58
-                    - 59
-                    - 60
-                    - 61
-                    - 62
-                    - 65
-                    - 66
-                    - 67
-                    - 68
-                    - 69
-                    - 70
-                    - 86
-                    - 87
-                    - 99
-                    - 100
-                    - 101
-                    - 102
-                    - 103
-                    - 104
-                    - 105
-                    - 1000
-                    - 1001
-            ids:
-                __text__:
-                    - "12345"
-            otherParam:
-                __text__: false
+            keys:
+                fields:
+                    text:
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 5
+                        - 6
+                        - 7
+                        - 8
+                        - 11
+                        - 13
+                        - 14
+                        - 16
+                        - 17
+                        - 18
+                        - 19
+                        - 22
+                        - 24
+                        - 34
+                        - 35
+                        - 36
+                        - 37
+                        - 38
+                        - 39
+                        - 40
+                        - 41
+                        - 44
+                        - 45
+                        - 46
+                        - 47
+                        - 51
+                        - 56
+                        - 57
+                        - 58
+                        - 59
+                        - 60
+                        - 61
+                        - 62
+                        - 65
+                        - 66
+                        - 67
+                        - 68
+                        - 69
+                        - 70
+                        - 86
+                        - 87
+                        - 99
+                        - 100
+                        - 101
+                        - 102
+                        - 103
+                        - 104
+                        - 105
+                        - 1000
+                        - 1001
+                ids:
+                    text:
+                        - "12345"
+                otherParam:
+                    text: false
+            json:
+                fields: '{{{fields}}}'
+                ids: '{{{ids}}}'
+                otherParam: "{{{otherParam}}}"
     complete_check:
         name: "Complete check"
         url: "https://example.it/check/{item_id}/user/1956/approvecheck"

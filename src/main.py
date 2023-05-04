@@ -8,7 +8,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 
 from libs.core import StructureParser, send_request
-from libs.structure import Request, RequestParam
+from libs.structure import Request, RequestBody, RequestParam
+
+
+TITLE = "HTTP requests assistant"
 
 
 class MainWindow(QWidget):
@@ -20,7 +23,7 @@ class MainWindow(QWidget):
         self._center()
 
     def init_ui(self):
-        self.setWindowTitle("Universal QA helper")
+        self.setWindowTitle(TITLE)
         requests_frame = RequestsFrame(self, self.structure.http_requests)
         main_grid = QGridLayout(self)
         main_grid.addWidget(requests_frame, 0, 0)
@@ -68,7 +71,7 @@ class HTTPRequestFrame(QFrame):
         # Container for graphical objects of corresponding request params:
         self.url_parts_list = []
         self.query_params_mapping = dict.fromkeys(self.http_request_data.parsed_query_params)
-        self.body_mapping = dict.fromkeys(self.http_request_data.parsed_body)
+        self.body_mapping = dict.fromkeys(self.http_request_data.body.parsed_keys)
         self.headers_mapping = dict.fromkeys(self.http_request_data.parsed_headers)
         self.init_ui()
 
@@ -121,9 +124,9 @@ class HTTPRequestFrame(QFrame):
                 headers_frame_layout.addWidget(self.headers_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(headers_frame, 4, 0, 1, 2)
 
-        if self.http_request_data.parsed_body:
+        if self.http_request_data.body.parsed_keys:
             body_frame, body_frame_layout = self._create_ui_block("Body params:")
-            for number, param in enumerate(self.http_request_data.parsed_body.items()):
+            for number, param in enumerate(self.http_request_data.body.parsed_keys.items()):
                 self.body_mapping[param[0]] = ParamRow(self, *param)
                 body_frame_layout.addWidget(self.body_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(body_frame, 5, 0, 1, 2)
@@ -147,7 +150,7 @@ class HTTPRequestFrame(QFrame):
             param.current_value = self.query_params_mapping[key].value
         for key, param in self.http_request_data.parsed_headers.items():
             param.current_value = self.headers_mapping[key].value
-        for key, param in self.http_request_data.parsed_body.items():
+        for key, param in self.http_request_data.body.parsed_keys.items():
             param.current_value = self.body_mapping[key].value
         self.show_result(send_request(self.http_request_data))
 

@@ -5,7 +5,8 @@ from itertools import zip_longest
 import requests
 import yaml
 
-from .structure import Request, Structure, URL_PARTS_TEMPLATE, RequestParamsNames, RootParamsNames
+from .structure import (Request, RequestBody, Structure, URL_PARTS_TEMPLATE,
+                        RequestParamsNames, BodyParamsNames, RootParamsNames)
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -40,7 +41,10 @@ class StructureParser:
             if headers := value.get(RequestParamsNames.headers):
                 data[RequestParamsNames.headers.name] = headers
             if body := value.get(RequestParamsNames.body):
-                data[RequestParamsNames.body.name] = body
+                data[RequestParamsNames.body.name] = RequestBody(
+                    keys=body[BodyParamsNames.keys.name],
+                    json=body[BodyParamsNames.json.name]
+                )
             if query_params := value.get(RequestParamsNames.query_params):
                 data[RequestParamsNames.query_params.name] = query_params
             http_requests[key] = Request(**data)
