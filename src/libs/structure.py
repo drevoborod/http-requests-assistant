@@ -3,7 +3,9 @@ from enum import Enum   # ToDo: change to TextEnum after switching to Python 3.1
 import re
 
 
-URL_PARTS_TEMPLATE = r"\{(.*?)}"
+TEMPLATE_TO_FIND_URL_PARTS = r"\{(.*?)}"
+TEMPLATE_TO_SPLIT_URL = r"\{.*?}"
+HTTP_LOG = "http_log.txt"
 
 
 ######## Names enums ################
@@ -33,7 +35,16 @@ class BodyParamsNames(str, Enum):
     json = "json"
 
 
+class GeneralParamsNames(str, Enum):
+    enable_http_log = "enable_http_log"
+    http_log = "http_log"
+
 ########### Data classes ##############
+
+@dataclass
+class General:
+    enable_http_log: bool = False
+    http_log: str = HTTP_LOG
 
 
 @dataclass
@@ -69,7 +80,7 @@ class Request:
 
     def __post_init__(self):
         self.parsed_url_parts = []
-        url_keys = re.findall(URL_PARTS_TEMPLATE, self.url)
+        url_keys = re.findall(TEMPLATE_TO_FIND_URL_PARTS, self.url)
         for item in url_keys:
             self.parsed_url_parts.append(RequestParam(text=item))
         self.parsed_query_params = _prepare_params(self.query_params)
@@ -79,6 +90,7 @@ class Request:
 @dataclass
 class Structure:
     http_requests: dict[str, Request]
+    general: General = field(default_factory=General)
 
 
 def _prepare_params(params: dict):

@@ -9,7 +9,8 @@
 # if "text" exists: default value(s) will be shown in editable text area
 # "text" parameter supports JSON
 # also "description" parameter can exist.
-
+general:
+    enable_http_log: true
 http_requests:
     description_enable:
         name: "Enable Function 1"
