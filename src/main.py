@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 
 from libs.core import StructureParser, send_request
-from libs.structure import Request, RequestBody, RequestParam
+from libs.structure import Request, RequestParam
 
 
 TITLE = "HTTP requests assistant"

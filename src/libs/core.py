@@ -1,4 +1,5 @@
 import json
+from logging import ERROR, INFO, Logger, StreamHandler
 import re
 from itertools import zip_longest
 
@@ -52,38 +53,44 @@ class StructureParser:
 
 
 def send_request(request_object: Request):
-    ###
-    # print(request_object)
-    ###
+    logger = Logger('requests sender')
+    logger.addHandler(StreamHandler())
+    logger.info(request_object)
     url_parts = [value.current_value for value in request_object.parsed_url_parts]
-    body = {name: value.current_value for name, value in request_object.parsed_body.items()}
+    raw_body = _prepare_body(request_object.body)
     query_params = {name: value.current_value for name, value in request_object.parsed_query_params.items()}
     headers = {name: value.current_value for name, value in request_object.parsed_headers.items()}
     splitted_url = re.split(URL_PARTS_TEMPLATE, request_object.url)
     url = "".join([item for sublist in zip_longest(splitted_url, url_parts, fillvalue="") for item in sublist])
-    for key, value in body.items():
-        try:
-            replace = json.loads(value)
-        except Exception:
-            pass
-        else:
-            body[key] = replace
-    ###
-    # for x in (url, body, url_parts, headers, query_params):
-    #     print(x)
-    ###
-    try:
-        response = requests.request(
-            method=request_object.method,
+    # For logging purposes:
+    request = requests.Request(method=request_object.method,
             url=url,
             params=query_params,
             headers=headers,
-            json=body
-        )
+            data=raw_body)
+    prepared_request = request.prepare()
+    logger.info(prepared_request)
+    session = requests.session()
+    try:
+        response = session.send(prepared_request)
     except requests.exceptions.RequestException as err:
+        logger.error(err)
         return str(err)
     else:
         try:
-            return json.dumps(response.json(), indent=4, ensure_ascii=False)
+            resp = json.dumps(response.json(), indent=4, ensure_ascii=False)
+            logger.info(resp)
+            return resp
         except Exception:
-            return response.content.decode(encoding="utf-8")
+            resp = response.content.decode(encoding="utf-8")
+            logger.info(resp)
+            return resp
+
+
+def _prepare_body(body: RequestBody) -> bytes:
+    if body.json:           # prevent sending empty json in request body
+        json_template = json.dumps(body.json)
+        for key, value in body.parsed_keys.items():
+            json_template = json_template.replace('{{{%s}}}' % key, str(value.current_value).lower())
+        return json_template.encode('utf-8')
+        # return json.loads(json_template)
