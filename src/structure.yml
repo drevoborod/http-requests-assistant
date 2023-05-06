@@ -1,14 +1,22 @@
 ## url rules:
 # parts in curl braces will be parsed as adjustable parameters,
-#   e.g.: in "http://example.com/path/{param1}/something" "param1" will be replaced with actual value set by user in GUI
-#   and curl braces will be removed.
+#   e.g.: in "http://example.com/path/{param1}/something" "{param1}" will be replaced with actual value
+#   set by the user in the GUI and curl braces will be removed.
 # URL should contain protocol.
 
-## headers, body and query_params rules (for every item):
+## headers, body and query_params rules:
+# Each of these sections is optional.
+# Every section can contain two subsections:
+# - json: arbitrary one. Contains the data itself.
+# - keys: optional section. Contains values described below. One of these values will replace
+# corresponding placeholder in "json" section. The placeholder is key name in triple curl braces:
+# '{{{key_name}}}'
+# For every item in "keys" section following rules will be applied:
 # if "choices" exists: dropdown list of possible values will be displayed
 # if "text" exists: default value(s) will be shown in editable text area
 # "text" parameter supports JSON
-# also "description" parameter can exist.
+# also "description" parameter can exist. It contains read-only description which will be shown in the interface.
+
 general:
     enable_http_log: true
 http_requests:
@@ -17,17 +25,22 @@ http_requests:
         url: "https://example.it/{test_1}/12345/{test_1}/my_endpoint"
         method: "post"
         headers:
-            Content-Type:
-                text: "application/json"
+            json:
+                Content-Type: "application/json"
         query_params:
-            test_1:
-                text: "654321"
-            param2:
-                choices:
-                    - 17
-                    - 8
-                    - 9
-                    - 10
+            keys:
+                test_1:
+                    text: "654321"
+                param2:
+                    choices:
+                        - 17
+                        - 8
+                        - 9
+                        - 10
+            json:
+                test_1: '{{{test_1}}}'
+                param2: '{{{param2}}}'
+                param3: some text
         body:
             keys:
                 enabled:
@@ -87,10 +100,12 @@ http_requests:
         url: "https://example.it/user-verification"
         method: "post"
         headers:
-            Source:
-                text: "test"
-            Content-Type:
-                text: "application/json"
+            keys:
+                Source:
+                    text: "test"
+            json:
+                Source: '{{{Source}}}'
+                Content-Type: "application/json"
         body:
             keys:
                 userId:
@@ -123,8 +138,8 @@ http_requests:
         url: "http://example.it/item"
         method: "post"
         headers:
-            Content-Type:
-                text: "application/json"
+            json:
+                Content-Type: "application/json"
         body:
             keys:
                 fields:

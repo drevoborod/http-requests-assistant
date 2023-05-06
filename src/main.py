@@ -70,9 +70,9 @@ class HTTPRequestFrame(QFrame):
         self.http_request_data = http_request_data
         # Container for graphical objects of corresponding request params:
         self.url_parts_list = []
-        self.query_params_mapping = dict.fromkeys(self.http_request_data.parsed_query_params)
+        self.query_params_mapping = dict.fromkeys(self.http_request_data.query_params.parsed_keys)
         self.body_mapping = dict.fromkeys(self.http_request_data.body.parsed_keys)
-        self.headers_mapping = dict.fromkeys(self.http_request_data.parsed_headers)
+        self.headers_mapping = dict.fromkeys(self.http_request_data.headers.parsed_keys)
         self.init_ui()
 
     def init_ui(self):
@@ -110,16 +110,16 @@ class HTTPRequestFrame(QFrame):
                 url_parts_frame_layout.addWidget(self.url_parts_list[number], number + 1, 0, 1, 2)
             grid.addWidget(url_parts_frame, 2, 0, 1, 2)
 
-        if self.http_request_data.parsed_query_params:
+        if self.http_request_data.query_params.parsed_keys:
             query_params_frame, query_params_frame_layout = self._create_ui_block("URL query params:")
-            for number, param in enumerate(self.http_request_data.parsed_query_params.items()):
+            for number, param in enumerate(self.http_request_data.query_params.parsed_keys.items()):
                 self.query_params_mapping[param[0]] = ParamRow(self, *param)
                 query_params_frame_layout.addWidget(self.query_params_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(query_params_frame, 3, 0, 1, 2)
 
-        if self.http_request_data.parsed_headers:
+        if self.http_request_data.headers.parsed_keys:
             headers_frame, headers_frame_layout = self._create_ui_block("Headers:")
-            for number, param in enumerate(self.http_request_data.parsed_headers.items()):
+            for number, param in enumerate(self.http_request_data.headers.parsed_keys.items()):
                 self.headers_mapping[param[0]] = ParamRow(self, *param)
                 headers_frame_layout.addWidget(self.headers_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(headers_frame, 4, 0, 1, 2)
@@ -146,9 +146,9 @@ class HTTPRequestFrame(QFrame):
     def send(self):
         for number, param in enumerate(self.http_request_data.parsed_url_parts):
             param.current_value = self.url_parts_list[number].value
-        for key, param in self.http_request_data.parsed_query_params.items():
+        for key, param in self.http_request_data.query_params.parsed_keys.items():
             param.current_value = self.query_params_mapping[key].value
-        for key, param in self.http_request_data.parsed_headers.items():
+        for key, param in self.http_request_data.headers.parsed_keys.items():
             param.current_value = self.headers_mapping[key].value
         for key, param in self.http_request_data.body.parsed_keys.items():
             param.current_value = self.body_mapping[key].value

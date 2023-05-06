@@ -6,8 +6,8 @@ from itertools import zip_longest
 import requests
 import yaml
 
-from .structure import (General, Request, RequestBody, Structure, TEMPLATE_TO_SPLIT_URL,
-                        RequestParamsNames, BodyParamsNames, RootParamsNames)
+from .structure import (General, Request, RequestSection, Structure, TEMPLATE_TO_SPLIT_URL, TEMPLATE_TO_REPLACE_PARAM,
+                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames)
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -41,15 +41,17 @@ class StructureParser:
                 url=value[RequestParamsNames.url.name],
                 method=value[RequestParamsNames.method.name]
             )
-            if headers := value.get(RequestParamsNames.headers):
-                data[RequestParamsNames.headers.name] = headers
-            if body := value.get(RequestParamsNames.body):
-                data[RequestParamsNames.body.name] = RequestBody(
-                    keys=body[BodyParamsNames.keys.name],
-                    json=body[BodyParamsNames.json.name]
-                )
-            if query_params := value.get(RequestParamsNames.query_params):
-                data[RequestParamsNames.query_params.name] = query_params
+
+            for section_name in (
+                RequestParamsNames.headers,
+                RequestParamsNames.query_params,
+                RequestParamsNames.body
+            ):
+                if section := value.get(section_name):
+                    section_dict = {RequestSectionParamsNames.json.name: section[RequestSectionParamsNames.json.name]}
+                    if keys := section.get(RequestSectionParamsNames.keys.name):
+                        section_dict[RequestSectionParamsNames.keys.name] = keys
+                    data[section_name.name] = RequestSection(**section_dict)
             http_requests[key] = Request(**data)
         if cls.parsed.get(RootParamsNames.general.name):
             return Structure(
@@ -65,10 +67,10 @@ def send_request(request_object: Request):
         logger = Logger('requests sender')
         logger.addHandler(FileHandler(StructureParser().structure.general.http_log))
         logger.info(request_object)
-    url_parts = [value.current_value for value in request_object.parsed_url_parts]
     raw_body = _prepare_body(request_object.body)
-    query_params = {name: value.current_value for name, value in request_object.parsed_query_params.items()}
-    headers = {name: value.current_value for name, value in request_object.parsed_headers.items()}
+    query_params = _prepare_section(request_object.query_params)
+    headers = _prepare_section(request_object.headers)
+    url_parts = [value.current_value for value in request_object.parsed_url_parts]
     splitted_url = re.split(TEMPLATE_TO_SPLIT_URL, request_object.url)
     url = "".join([item for sublist in zip_longest(splitted_url, url_parts, fillvalue="") for item in sublist])
     # For logging purposes:
@@ -79,7 +81,8 @@ def send_request(request_object: Request):
             data=raw_body)
     prepared_request = request.prepare()
     if enable_log:
-        logger.info(f'url: {prepared_request.url}\n'
+        logger.info(f'\n######## Request: {request_object.name} #######\n'
+                    f'url: {prepared_request.url}\n'
                     f'Headers: {prepared_request.headers}\n'
                     f'Body: {prepared_request.body}\n')
     session = requests.session()
@@ -102,9 +105,27 @@ def send_request(request_object: Request):
             return resp
 
 
-def _prepare_body(body: RequestBody) -> bytes:
+def _prepare_body(body: RequestSection) -> bytes:
     if body.json:           # prevent sending empty json in request body
         json_template = json.dumps(body.json)
         for key, value in body.parsed_keys.items():
-            json_template = json_template.replace('{{{%s}}}' % key, str(value.current_value).lower())
+            json_template = json_template.replace(TEMPLATE_TO_REPLACE_PARAM % key, _prepare_type_to_replace(value.current_value))
         return json_template.encode('utf-8')
+
+
+def _prepare_section(section: RequestSection) -> dict:
+    if section.parsed_keys:
+        json_template = json.dumps(section.json)
+        for key, value in section.parsed_keys.items():
+            json_template = json_template.replace(TEMPLATE_TO_REPLACE_PARAM % key, _prepare_type_to_replace(value.current_value))
+        return json.loads(json_template)
+    return section.json
+
+
+def _prepare_type_to_replace(data) -> str:
+    # ToDo: correctly replace boolean params - they should not be converted to strings
+    if isinstance(data, bool):
+        return str(data).lower()
+    elif not isinstance(data, str):
+        return str(data)
+    return data
