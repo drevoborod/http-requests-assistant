@@ -37,16 +37,20 @@ def _convert_postman_request(data: dict) -> dict:
     if isinstance(url_source, str):
         result[RequestParamsNames.url.value] = url_source
     else:
-        url = [url_source["protocol"] + ":/"]
-        url.append(".".join(url_source["host"]))
-        url.append("/".join(url_source["path"]))
+        url = []
+        if protocol := url_source.get("protocol"):
+            url.append(protocol + ":/")
+        if host := url_source.get("host"):
+            url.append(".".join(host))
+        if path := url_source.get("path"):
+            url.append("/".join(path))
         result[RequestParamsNames.url.value] = "/".join(url)
 
     if isinstance(url_source, dict):
         if query_source := url_source.get("query"):
             result[RequestParamsNames.query_params.value] = {
                 RequestSectionParamsNames.json.value: {
-                    item["key"]: item["value"] for item in query_source
+                    item["key"]: item["value"] for item in query_source if not item.get("disabled")
                 }
             }
 
@@ -59,7 +63,7 @@ def _convert_postman_request(data: dict) -> dict:
         }
 
     body_source = request.get("body")
-    # Only JSON body supported yet:
+    # Only raw body containing JSON supported yet:
     if body_source and body_source["mode"] == "raw":
         try:
             parsed_body = json.loads(body_source["raw"])    # should be dictionary
