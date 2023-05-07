@@ -4,6 +4,7 @@ import re
 from itertools import zip_longest
 
 import requests
+from requests.exceptions import JSONDecodeError, RequestException
 import yaml
 
 from .structure import (General, Request, RequestSection, Structure, TEMPLATE_TO_SPLIT_URL, TEMPLATE_TO_REPLACE_PARAM,
@@ -88,7 +89,7 @@ def send_request(request_object: Request):
     session = requests.session()
     try:
         response = session.send(prepared_request)
-    except requests.exceptions.RequestException as err:
+    except RequestException as err:
         if enable_log:
             logger.error(err)
         return str(err)
@@ -98,7 +99,7 @@ def send_request(request_object: Request):
             if enable_log:
                 logger.info(resp)
             return resp
-        except Exception:
+        except (JSONDecodeError, UnicodeDecodeError):
             resp = response.content.decode(encoding="utf-8")
             if enable_log:
                 logger.info(resp)
@@ -109,7 +110,10 @@ def _prepare_body(body: RequestSection) -> bytes:
     if body.json:           # prevent sending empty json in request body
         json_template = json.dumps(body.json)
         for key, value in body.parsed_keys.items():
-            json_template = json_template.replace(TEMPLATE_TO_REPLACE_PARAM % key, _prepare_type_to_replace(value.current_value))
+            placeholder = TEMPLATE_TO_REPLACE_PARAM % key
+            if placeholder not in json_template:
+                raise KeyError(f'Key "{key}" is defined but never used in the request body')
+            json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value))
         return json_template.encode('utf-8')
 
 
@@ -117,15 +121,17 @@ def _prepare_section(section: RequestSection) -> dict:
     if section.parsed_keys:
         json_template = json.dumps(section.json)
         for key, value in section.parsed_keys.items():
-            json_template = json_template.replace(TEMPLATE_TO_REPLACE_PARAM % key, _prepare_type_to_replace(value.current_value))
+            placeholder = TEMPLATE_TO_REPLACE_PARAM % key
+            if placeholder not in json_template:
+                raise KeyError(f'Key "{key}" is defined but never used')
+            json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value))
         return json.loads(json_template)
     return section.json
 
 
 def _prepare_type_to_replace(data) -> str:
-    # ToDo: correctly replace boolean params - they should not be converted to strings
     if isinstance(data, bool):
         return str(data).lower()
     elif not isinstance(data, str):
         return str(data)
-    return data
+    return f'"{data}"'          # need to return quotes

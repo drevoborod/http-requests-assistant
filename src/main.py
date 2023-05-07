@@ -152,7 +152,13 @@ class HTTPRequestFrame(QFrame):
             param.current_value = self.headers_mapping[key].value
         for key, param in self.http_request_data.body.parsed_keys.items():
             param.current_value = self.body_mapping[key].value
-        self.show_result(send_request(self.http_request_data))
+
+        try:
+            result = send_request(self.http_request_data)
+        except Exception as err:
+            self.show_result(str(err))
+        else:
+            self.show_result(result)
 
     def show_result(self, data: str):
         result_dialogue = QDialog(self)

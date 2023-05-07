@@ -5,7 +5,7 @@ import re
 
 TEMPLATE_TO_FIND_URL_PARTS = r"\{(.*?)}"
 TEMPLATE_TO_SPLIT_URL = r"\{.*?}"
-TEMPLATE_TO_REPLACE_PARAM = r'{{{%s}}}'
+TEMPLATE_TO_REPLACE_PARAM = r'"{{{%s}}}"'
 HTTP_LOG = "http_log.txt"
 
 

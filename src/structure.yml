@@ -25,8 +25,17 @@ http_requests:
         url: "https://example.it/{test_1}/12345/{test_1}/my_endpoint"
         method: "post"
         headers:
+            keys:
+                x-source:
+                    text: "proverka"
+                z-source:
+                    text: 888
+#                y-source:
+#                    text: 888
             json:
                 Content-Type: "application/json"
+                x-source: '{{{x-source}}}'
+                z-source: "{{{z-source}}}"
         query_params:
             keys:
                 test_1:
@@ -94,6 +103,7 @@ http_requests:
                             - Frodo
                         shelves: '{{{shelves}}}'
                         ID: '{{{ID1}}}'
+                userIDs: "{{{userIDs}}}"
 
     user_verification:
         name: "User Verification"
