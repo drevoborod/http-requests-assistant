@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -7,7 +8,7 @@ import re
 
 import yaml
 
-from libs.structure import NodeParamsNames, RequestParamsNames, RootParamsNames
+from libs.structure import RequestParamsNames, RootParamsNames, RequestSectionParamsNames
 
 
 POSTMAN_SCHEMA_STRING_TEMPLATE = re.compile(r"https://schema\..*postman\.com/.*/(v\d[0-9.]*)/.*\.json")
@@ -36,21 +37,33 @@ def _convert_postman_request(data: dict) -> dict:
     if isinstance(url_source, str):
         result[RequestParamsNames.url.value] = url_source
     else:
-        url = [url_source["protocol"] + ":/"]
-        url.append(".".join(url_source["host"]))
-        url.append("/".join(url_source["path"]))
+        url = []
+        if protocol := url_source.get("protocol"):
+            url.append(protocol + ":/")
+        if host := url_source.get("host"):
+            url.append(".".join(host))
+        if path := url_source.get("path"):
+            url.append("/".join(path))
         result[RequestParamsNames.url.value] = "/".join(url)
 
     if isinstance(url_source, dict):
         if query_source := url_source.get("query"):
-            result[RequestParamsNames.query_params.value] = {item["key"]: {NodeParamsNames.text.value: item["value"]} for item in query_source}
+            result[RequestParamsNames.query_params.value] = {
+                RequestSectionParamsNames.json.value: {
+                    item["key"]: item["value"] for item in query_source if not item.get("disabled")
+                }
+            }
 
     headers_source = request.get("header")
     if headers_source:
-        result[RequestParamsNames.headers.value] = {item["key"]: {NodeParamsNames.text.value: item["value"]} for item in headers_source}
+        result[RequestParamsNames.headers.value] = {
+            RequestSectionParamsNames.json.value: {
+                item["key"]: item["value"] for item in headers_source
+            }
+        }
 
     body_source = request.get("body")
-    # Only JSON body supported yet:
+    # Only raw body containing JSON supported yet:
     if body_source and body_source["mode"] == "raw":
         try:
             parsed_body = json.loads(body_source["raw"])    # should be dictionary
@@ -58,11 +71,7 @@ def _convert_postman_request(data: dict) -> dict:
             # ToDO: add logging here
             pass
         else:
-            result[RequestParamsNames.body.value] = {}
-            for key, value in parsed_body.items():
-                if isinstance(value, (dict, list)):
-                    value = json.dumps(value)
-                result[RequestParamsNames.body.value][key] = {NodeParamsNames.text.value: value}
+            result[RequestParamsNames.body.value] = {RequestSectionParamsNames.json.value: parsed_body}
 
     return result
 
@@ -86,13 +95,23 @@ def convert_postman_collection(data: dict) -> (bool, [str, dict]):
     return True, result
 
 
+def commandline_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="Path to the file containing Postman collection")
+    parser.add_argument("-o", "--out", help="Path to resulting file")
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    p = sys.argv[1]
-    parsed = load_json_file(p)
+    args = commandline_args()
+    parsed = load_json_file(args.file)
     if not parsed[0]:
         sys.exit(f"Unable to load JSON file.\n{parsed[1]}")
     converted = convert_postman_collection(parsed[1])
     if not converted[0]:
         sys.exit(converted[1])
-    with open(POSTMAN_RESULT_FILE_NAME, "w") as file:
+    result_file = args.out
+    if not result_file:
+        result_file = POSTMAN_RESULT_FILE_NAME
+    with open(result_file, "w") as file:
         yaml.dump(converted[1], file, sort_keys=False, indent=4, allow_unicode=True)

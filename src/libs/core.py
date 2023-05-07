@@ -1,85 +1,139 @@
 import json
+from logging import Logger, FileHandler
 import re
 from itertools import zip_longest
 
 import requests
+from requests.exceptions import JSONDecodeError, RequestException
 import yaml
 
-from .structure import Request, Structure, URL_PARTS_TEMPLATE, RequestParamsNames, RootParamsNames
+from .structure import (General, Request, RequestSection, Structure, TEMPLATE_TO_SPLIT_URL, TEMPLATE_TO_REPLACE_PARAM,
+                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames)
 
 
 STRUCTURE_FILE = "structure.yml"
 
 
 class StructureParser:
-    def __init__(self, structure_file_name=STRUCTURE_FILE):
-        self.structure_file_name = structure_file_name
-        self.parsed = None
-        self._structure = None
+    parsed = None
+    _structure = None
+    structure_file_name = STRUCTURE_FILE
 
+    @classmethod
     @property
-    def structure(self):
-        if not self.parsed:
-            self.parsed = self._parse()
-        if not self._structure:
-            self._structure = self._prepare()
-        return self._structure
+    def structure(cls):
+        if not cls.parsed:
+            cls.parsed = cls._parse()
+        if not cls._structure:
+            cls._structure = cls._prepare()
+        return cls._structure
 
-    def _parse(self) -> dict:
-        with open(self.structure_file_name, 'r') as file:
+    @classmethod
+    def _parse(cls) -> dict:
+        with open(cls.structure_file_name, 'r') as file:
             return yaml.safe_load(file)
 
-    def _prepare(self):
+    @classmethod
+    def _prepare(cls):
         http_requests = {}
-        for key, value in self.parsed[RootParamsNames.http_requests].items():
+        for key, value in cls.parsed[RootParamsNames.http_requests].items():
             data = dict(
                 name=value[RequestParamsNames.name.name],
                 url=value[RequestParamsNames.url.name],
                 method=value[RequestParamsNames.method.name]
             )
-            if headers := value.get(RequestParamsNames.headers):
-                data[RequestParamsNames.headers.name] = headers
-            if body := value.get(RequestParamsNames.body):
-                data[RequestParamsNames.body.name] = body
-            if query_params := value.get(RequestParamsNames.query_params):
-                data[RequestParamsNames.query_params.name] = query_params
+
+            for section_name in (
+                RequestParamsNames.headers,
+                RequestParamsNames.query_params,
+                RequestParamsNames.body
+            ):
+                if section := value.get(section_name):
+                    section_dict = {RequestSectionParamsNames.json.name: section[RequestSectionParamsNames.json.name]}
+                    if keys := section.get(RequestSectionParamsNames.keys.name):
+                        section_dict[RequestSectionParamsNames.keys.name] = keys
+                    data[section_name.name] = RequestSection(**section_dict)
             http_requests[key] = Request(**data)
+        if cls.parsed.get(RootParamsNames.general.name):
+            return Structure(
+                http_requests=http_requests,
+                general=General(**cls.parsed[RootParamsNames.general.name])
+            )
         return Structure(http_requests)
 
 
 def send_request(request_object: Request):
-    ###
-    # print(request_object)
-    ###
+    enable_log = True if StructureParser().structure.general.enable_http_log else False
+    if enable_log:
+        logger = Logger('requests sender')
+        logger.addHandler(FileHandler(StructureParser().structure.general.http_log))
+        logger.info(request_object)
+    raw_body = _prepare_body(request_object.body)
+    query_params = _prepare_section(request_object.query_params)
+    headers = _prepare_section(request_object.headers)
     url_parts = [value.current_value for value in request_object.parsed_url_parts]
-    body = {name: value.current_value for name, value in request_object.parsed_body.items()}
-    query_params = {name: value.current_value for name, value in request_object.parsed_query_params.items()}
-    headers = {name: value.current_value for name, value in request_object.parsed_headers.items()}
-    splitted_url = re.split(URL_PARTS_TEMPLATE, request_object.url)
+    splitted_url = re.split(TEMPLATE_TO_SPLIT_URL, request_object.url)
     url = "".join([item for sublist in zip_longest(splitted_url, url_parts, fillvalue="") for item in sublist])
-    for key, value in body.items():
-        try:
-            replace = json.loads(value)
-        except Exception:
-            pass
-        else:
-            body[key] = replace
-    ###
-    # for x in (url, body, url_parts, headers, query_params):
-    #     print(x)
-    ###
-    try:
-        response = requests.request(
-            method=request_object.method,
+    # For logging purposes:
+    request = requests.Request(method=request_object.method,
             url=url,
             params=query_params,
             headers=headers,
-            json=body
-        )
-    except requests.exceptions.RequestException as err:
+            data=raw_body)
+    prepared_request = request.prepare()
+    if enable_log:
+        logger.info(f'\n######## Request: {request_object.name} #######\n'
+                    f'url: {prepared_request.url}\n'
+                    f'Headers: {prepared_request.headers}\n'
+                    f'Body: {prepared_request.body}\n')
+    session = requests.session()
+    try:
+        response = session.send(prepared_request)
+    except RequestException as err:
+        if enable_log:
+            logger.error(err)
         return str(err)
     else:
         try:
-            return json.dumps(response.json(), indent=4, ensure_ascii=False)
-        except Exception:
-            return response.content.decode(encoding="utf-8")
+            resp = json.dumps(response.json(), indent=4, ensure_ascii=False)
+            if enable_log:
+                logger.info(resp)
+            return resp
+        except (JSONDecodeError, UnicodeDecodeError):
+            resp = response.content.decode(encoding="utf-8")
+            if enable_log:
+                logger.info(resp)
+            return resp
+
+
+def _prepare_body(body: RequestSection) -> bytes:
+    if body.json:           # prevent sending empty json in request body
+        json_template = json.dumps(body.json)
+        for key, value in body.parsed_keys.items():
+            placeholder = TEMPLATE_TO_REPLACE_PARAM % key
+            if placeholder not in json_template:
+                raise KeyError(f'Key "{key}" is defined but never used in the request body')
+            json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value))
+        return json_template.encode('utf-8')
+
+
+def _prepare_section(section: RequestSection) -> dict:
+    if section.parsed_keys:
+        json_template = json.dumps(section.json)
+        for key, value in section.parsed_keys.items():
+            placeholder = TEMPLATE_TO_REPLACE_PARAM % key
+            if placeholder not in json_template:
+                raise KeyError(f'Key "{key}" is defined but never used')
+            json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value))
+        return json.loads(json_template)
+    return section.json
+
+
+def _prepare_type_to_replace(data) -> str:
+    if isinstance(data, bool):
+        return str(data).lower()
+    elif not isinstance(data, str):
+        return str(data)
+    elif data.isdecimal():      # if it's a number, we shouldn't convert it to string
+        return data
+    return f'"{data}"'          # need to return quotes

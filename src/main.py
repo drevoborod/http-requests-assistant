@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
@@ -11,6 +11,9 @@ from libs.core import StructureParser, send_request
 from libs.structure import Request, RequestParam
 
 
+TITLE = "HTTP requests assistant"
+
+
 class MainWindow(QWidget):
     def __init__(self, exit_callback):
         super().__init__()
@@ -20,11 +23,12 @@ class MainWindow(QWidget):
         self._center()
 
     def init_ui(self):
-        self.setWindowTitle("Universal QA helper")
+        self.setWindowTitle(TITLE)
         requests_frame = RequestsFrame(self, self.structure.http_requests)
         main_grid = QGridLayout(self)
         main_grid.addWidget(requests_frame, 0, 0)
         self.setLayout(main_grid)
+        self.setMaximumWidth(QDesktopWidget().availableGeometry().size().width() - 10)
         self.show()
 
     def _center(self):
@@ -48,6 +52,8 @@ class RequestsFrame(QFrame):
         form_layout = QFormLayout()
         for item in self.http_requests.values():
             form_layout.addRow(item.name, HTTPRequestFrame(self, item))
+        form_layout.setRowWrapPolicy(form_layout.WrapAllRows)
+        # form_layout.setVerticalSpacing(100)
 
         group_box = QFrame()
         group_box.setLayout(form_layout)
@@ -67,13 +73,14 @@ class HTTPRequestFrame(QFrame):
         self.http_request_data = http_request_data
         # Container for graphical objects of corresponding request params:
         self.url_parts_list = []
-        self.query_params_mapping = dict.fromkeys(self.http_request_data.parsed_query_params)
-        self.body_mapping = dict.fromkeys(self.http_request_data.parsed_body)
-        self.headers_mapping = dict.fromkeys(self.http_request_data.parsed_headers)
+        self.query_params_mapping = dict.fromkeys(self.http_request_data.query_params.parsed_keys)
+        self.body_mapping = dict.fromkeys(self.http_request_data.body.parsed_keys)
+        self.headers_mapping = dict.fromkeys(self.http_request_data.headers.parsed_keys)
         self.init_ui()
 
     def init_ui(self):
         self.setFrameShape(QFrame.Panel)
+        self.setLineWidth(2)
 
         url_frame = QFrame(self)
         url_frame_layout = QGridLayout()
@@ -88,16 +95,11 @@ class HTTPRequestFrame(QFrame):
         url_frame.setFrameShadow(QFrame.Raised)
         url_frame.setLayout(url_frame_layout)
 
-        send_button = QPushButton("Send request", self)
-        send_button.clicked.connect(self.send)
-
-        font = self.font()
-        font.setPointSize(font.pointSize() + 2)
-        font.setBold(True)
-        send_button.setFont(font)
+        send_button_top = self._send_button()
+        send_button_bottom = self._send_button()
 
         grid = QGridLayout(self)
-        grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
+        grid.addWidget(send_button_top, 0, 0, alignment=Qt.AlignLeft)
         grid.addWidget(url_frame, 1, 0, 1, 2)
 
         if self.http_request_data.parsed_url_parts:
@@ -107,26 +109,28 @@ class HTTPRequestFrame(QFrame):
                 url_parts_frame_layout.addWidget(self.url_parts_list[number], number + 1, 0, 1, 2)
             grid.addWidget(url_parts_frame, 2, 0, 1, 2)
 
-        if self.http_request_data.parsed_query_params:
+        if self.http_request_data.query_params.parsed_keys:
             query_params_frame, query_params_frame_layout = self._create_ui_block("URL query params:")
-            for number, param in enumerate(self.http_request_data.parsed_query_params.items()):
+            for number, param in enumerate(self.http_request_data.query_params.parsed_keys.items()):
                 self.query_params_mapping[param[0]] = ParamRow(self, *param)
                 query_params_frame_layout.addWidget(self.query_params_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(query_params_frame, 3, 0, 1, 2)
 
-        if self.http_request_data.parsed_headers:
+        if self.http_request_data.headers.parsed_keys:
             headers_frame, headers_frame_layout = self._create_ui_block("Headers:")
-            for number, param in enumerate(self.http_request_data.parsed_headers.items()):
+            for number, param in enumerate(self.http_request_data.headers.parsed_keys.items()):
                 self.headers_mapping[param[0]] = ParamRow(self, *param)
                 headers_frame_layout.addWidget(self.headers_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(headers_frame, 4, 0, 1, 2)
 
-        if self.http_request_data.parsed_body:
+        if self.http_request_data.body.parsed_keys:
             body_frame, body_frame_layout = self._create_ui_block("Body params:")
-            for number, param in enumerate(self.http_request_data.parsed_body.items()):
+            for number, param in enumerate(self.http_request_data.body.parsed_keys.items()):
                 self.body_mapping[param[0]] = ParamRow(self, *param)
                 body_frame_layout.addWidget(self.body_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(body_frame, 5, 0, 1, 2)
+
+        grid.addWidget(send_button_bottom, 6, 1, alignment=Qt.AlignRight)
 
         self.setLayout(grid)
 
@@ -140,16 +144,31 @@ class HTTPRequestFrame(QFrame):
         frame.setLayout(layout)
         return frame, layout
 
+    def _send_button(self):
+        send_button = QPushButton("Send request", self)
+        send_button.clicked.connect(self.send)
+        font = send_button.font()
+        font.setPointSize(font.pointSize() + 4)
+        font.setBold(True)
+        send_button.setFont(font)
+        return send_button
+
     def send(self):
         for number, param in enumerate(self.http_request_data.parsed_url_parts):
             param.current_value = self.url_parts_list[number].value
-        for key, param in self.http_request_data.parsed_query_params.items():
+        for key, param in self.http_request_data.query_params.parsed_keys.items():
             param.current_value = self.query_params_mapping[key].value
-        for key, param in self.http_request_data.parsed_headers.items():
+        for key, param in self.http_request_data.headers.parsed_keys.items():
             param.current_value = self.headers_mapping[key].value
-        for key, param in self.http_request_data.parsed_body.items():
+        for key, param in self.http_request_data.body.parsed_keys.items():
             param.current_value = self.body_mapping[key].value
-        self.show_result(send_request(self.http_request_data))
+
+        try:
+            result = send_request(self.http_request_data)
+        except Exception as err:
+            self.show_result(str(err))
+        else:
+            self.show_result(result)
 
     def show_result(self, data: str):
         result_dialogue = QDialog(self)
@@ -199,10 +218,17 @@ class ParamRow(QFrame):
         grid.addWidget(self._area, 0, 1)
         if self.request_param.description:
             descr_title = QLabel("Description:", self)
-            descr_value = QLineEdit(self)
-            descr_value.setText(self.request_param.description)
-            descr_value.setDisabled(True)
-            grid.addWidget(descr_title, 1, 0, alignment=Qt.AlignLeft)
+
+            descr_value = QPlainTextEdit(self)
+            descr_value.setReadOnly(True)
+            descr_value.setPlainText(self.request_param.description)
+            font = descr_value.document().defaultFont()
+            font_metrics = QtGui.QFontMetrics(font)
+            text_size = font_metrics.size(0, descr_value.toPlainText())
+            text_height = text_size.height() + 10
+            descr_value.setMaximumHeight(text_height)
+
+            grid.addWidget(descr_title, 1, 0, alignment=Qt.AlignLeft | Qt.AlignTop)
             grid.addWidget(descr_value, 1, 1)
 
         self.setLayout(grid)

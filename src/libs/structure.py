@@ -3,8 +3,13 @@ from enum import Enum   # ToDo: change to TextEnum after switching to Python 3.1
 import re
 
 
-URL_PARTS_TEMPLATE = r"\{(.*?)}"
+TEMPLATE_TO_FIND_URL_PARTS = r"\{(.*?)}"
+TEMPLATE_TO_SPLIT_URL = r"\{.*?}"
+TEMPLATE_TO_REPLACE_PARAM = r'"{{{%s}}}"'
+HTTP_LOG = "http_log.txt"
 
+
+######## Names enums ################
 
 class RootParamsNames(str, Enum):
     http_requests = "http_requests"
@@ -21,9 +26,26 @@ class RequestParamsNames(str, Enum):
 
 
 class NodeParamsNames(str, Enum):
-    choices = "__choices__"
-    description = "__description__"
-    text = "__text__"
+    choices = "choices"
+    description = "description"
+    text = "text"
+
+
+class RequestSectionParamsNames(str, Enum):
+    keys = "keys"
+    json = "json"
+
+
+class GeneralParamsNames(str, Enum):
+    enable_http_log = "enable_http_log"
+    http_log = "http_log"
+
+########### Data classes ##############
+
+@dataclass
+class General:
+    enable_http_log: bool = False
+    http_log: str = HTTP_LOG
 
 
 @dataclass
@@ -35,32 +57,14 @@ class RequestParam:
 
 
 @dataclass
-class Request:
-    name: str
-    url: str
-    method: str
-    headers: dict = field(default_factory=dict)
-    body: dict = field(default_factory=dict)
-    query_params: dict = field(default_factory=dict)
-    # all adjustable parameters including URL parts in curl braces, query parameters, headers and body parameters:
-    parsed_headers: dict[str, RequestParam] = field(init=False)
-    parsed_body: dict[str, RequestParam] = field(init=False)
-    parsed_query_params: dict[str, RequestParam] = field(init=False)
-    parsed_url_parts: list[RequestParam] = field(init=False)
+class RequestSection:
+    json: dict = field(default_factory=dict)    # mandatory section - contains section data
+    keys: dict = field(default_factory=dict)    # optional section - contains adjustable parameters
+    parsed_keys: dict[str, RequestParam] = field(init=False)
 
     def __post_init__(self):
-        self.parsed_url_parts = []
-        url_keys = re.findall(URL_PARTS_TEMPLATE, self.url)
-        for item in url_keys:
-            self.parsed_url_parts.append(RequestParam(text=item))
-        self.parsed_body = self._prepare_params(self.body)
-        self.parsed_query_params = self._prepare_params(self.query_params)
-        self.parsed_headers = self._prepare_params(self.headers)
-
-    @staticmethod
-    def _prepare_params(params: dict):
-        result = {}
-        for key, value in params.items():
+        self.parsed_keys = {}
+        for key, value in self.keys.items():
             data = {}
             if (text := value.get(NodeParamsNames.text)) is not None:  # support of boolean params in text area
                 if isinstance(text, bool):
@@ -71,10 +75,28 @@ class Request:
                 data[NodeParamsNames.description.name] = description
             if choices := value.get(NodeParamsNames.choices):
                 data[NodeParamsNames.choices.name] = choices
-            result[key] = RequestParam(**data)
-        return result
+            self.parsed_keys[key] = RequestParam(**data)
+
+
+@dataclass
+class Request:
+    name: str
+    url: str
+    method: str
+    # all sections including URL parts in curl braces, query parameters and headers:
+    body: RequestSection = field(default_factory=RequestSection)
+    headers: RequestSection = field(default_factory=RequestSection)
+    query_params: RequestSection = field(default_factory=RequestSection)
+    parsed_url_parts: list[RequestParam] = field(init=False)
+
+    def __post_init__(self):
+        self.parsed_url_parts = []
+        url_keys = re.findall(TEMPLATE_TO_FIND_URL_PARTS, self.url)
+        for item in url_keys:
+            self.parsed_url_parts.append(RequestParam(text=item))
 
 
 @dataclass
 class Structure:
     http_requests: dict[str, Request]
+    general: General = field(default_factory=General)
