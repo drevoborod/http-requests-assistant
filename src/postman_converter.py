@@ -94,6 +94,7 @@ def convert_postman_collection(data: dict) -> (bool, [str, dict]):
 def commandline_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("file", help="Path to the file containing Postman collection")
+    parser.add_argument("-o", "--out", help="Path to resulting file")
     return parser.parse_args()
 
 
@@ -105,5 +106,8 @@ if __name__ == '__main__':
     converted = convert_postman_collection(parsed[1])
     if not converted[0]:
         sys.exit(converted[1])
-    with open(POSTMAN_RESULT_FILE_NAME, "w") as file:
+    result_file = args.out
+    if not result_file:
+        result_file = POSTMAN_RESULT_FILE_NAME
+    with open(result_file, "w") as file:
         yaml.dump(converted[1], file, sort_keys=False, indent=4, allow_unicode=True)
