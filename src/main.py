@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
     QDialog, QDialogButtonBox, QPlainTextEdit, QSizePolicy
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 
 from libs.core import StructureParser, send_request
 from libs.structure import Request, RequestParam
@@ -28,6 +28,7 @@ class MainWindow(QWidget):
         main_grid = QGridLayout(self)
         main_grid.addWidget(requests_frame, 0, 0)
         self.setLayout(main_grid)
+        self.setMaximumWidth(QDesktopWidget().availableGeometry().size().width() - 10)
         self.show()
 
     def _center(self):
@@ -51,6 +52,8 @@ class RequestsFrame(QFrame):
         form_layout = QFormLayout()
         for item in self.http_requests.values():
             form_layout.addRow(item.name, HTTPRequestFrame(self, item))
+        form_layout.setRowWrapPolicy(form_layout.WrapAllRows)
+        # form_layout.setVerticalSpacing(100)
 
         group_box = QFrame()
         group_box.setLayout(form_layout)
@@ -77,6 +80,7 @@ class HTTPRequestFrame(QFrame):
 
     def init_ui(self):
         self.setFrameShape(QFrame.Panel)
+        self.setLineWidth(2)
 
         url_frame = QFrame(self)
         url_frame_layout = QGridLayout()
@@ -91,16 +95,11 @@ class HTTPRequestFrame(QFrame):
         url_frame.setFrameShadow(QFrame.Raised)
         url_frame.setLayout(url_frame_layout)
 
-        send_button = QPushButton("Send request", self)
-        send_button.clicked.connect(self.send)
-
-        font = self.font()
-        font.setPointSize(font.pointSize() + 2)
-        font.setBold(True)
-        send_button.setFont(font)
+        send_button_top = self._send_button()
+        send_button_bottom = self._send_button()
 
         grid = QGridLayout(self)
-        grid.addWidget(send_button, 0, 1, alignment=Qt.AlignRight)
+        grid.addWidget(send_button_top, 0, 0, alignment=Qt.AlignLeft)
         grid.addWidget(url_frame, 1, 0, 1, 2)
 
         if self.http_request_data.parsed_url_parts:
@@ -131,6 +130,8 @@ class HTTPRequestFrame(QFrame):
                 body_frame_layout.addWidget(self.body_mapping[param[0]], number + 1, 0, 1, 2)
             grid.addWidget(body_frame, 5, 0, 1, 2)
 
+        grid.addWidget(send_button_bottom, 6, 1, alignment=Qt.AlignRight)
+
         self.setLayout(grid)
 
     def _create_ui_block(self, title_text: str):
@@ -142,6 +143,15 @@ class HTTPRequestFrame(QFrame):
         frame.setFrameShadow(QFrame.Sunken)
         frame.setLayout(layout)
         return frame, layout
+
+    def _send_button(self):
+        send_button = QPushButton("Send request", self)
+        send_button.clicked.connect(self.send)
+        font = send_button.font()
+        font.setPointSize(font.pointSize() + 4)
+        font.setBold(True)
+        send_button.setFont(font)
+        return send_button
 
     def send(self):
         for number, param in enumerate(self.http_request_data.parsed_url_parts):
