@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -7,7 +8,7 @@ import re
 
 import yaml
 
-from libs.structure import NodeParamsNames, RequestParamsNames, RootParamsNames
+from libs.structure import RequestParamsNames, RootParamsNames, RequestSectionParamsNames
 
 
 POSTMAN_SCHEMA_STRING_TEMPLATE = re.compile(r"https://schema\..*postman\.com/.*/(v\d[0-9.]*)/.*\.json")
@@ -43,11 +44,19 @@ def _convert_postman_request(data: dict) -> dict:
 
     if isinstance(url_source, dict):
         if query_source := url_source.get("query"):
-            result[RequestParamsNames.query_params.value] = {item["key"]: {NodeParamsNames.text.value: item["value"]} for item in query_source}
+            result[RequestParamsNames.query_params.value] = {
+                RequestSectionParamsNames.json.value: {
+                    item["key"]: item["value"] for item in query_source
+                }
+            }
 
     headers_source = request.get("header")
     if headers_source:
-        result[RequestParamsNames.headers.value] = {item["key"]: {NodeParamsNames.text.value: item["value"]} for item in headers_source}
+        result[RequestParamsNames.headers.value] = {
+            RequestSectionParamsNames.json.value: {
+                item["key"]: item["value"] for item in headers_source
+            }
+        }
 
     body_source = request.get("body")
     # Only JSON body supported yet:
@@ -58,11 +67,7 @@ def _convert_postman_request(data: dict) -> dict:
             # ToDO: add logging here
             pass
         else:
-            result[RequestParamsNames.body.value] = {}
-            for key, value in parsed_body.items():
-                if isinstance(value, (dict, list)):
-                    value = json.dumps(value)
-                result[RequestParamsNames.body.value][key] = {NodeParamsNames.text.value: value}
+            result[RequestParamsNames.body.value] = {RequestSectionParamsNames.json.value: parsed_body}
 
     return result
 
@@ -86,9 +91,15 @@ def convert_postman_collection(data: dict) -> (bool, [str, dict]):
     return True, result
 
 
+def commandline_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="Path to the file containing Postman collection")
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    p = sys.argv[1]
-    parsed = load_json_file(p)
+    args = commandline_args()
+    parsed = load_json_file(args.file)
     if not parsed[0]:
         sys.exit(f"Unable to load JSON file.\n{parsed[1]}")
     converted = convert_postman_collection(parsed[1])
