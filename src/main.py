@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QFrame, QLineEdit, QComboBox, QLabel, QPushButton,
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
@@ -218,10 +218,17 @@ class ParamRow(QFrame):
         grid.addWidget(self._area, 0, 1)
         if self.request_param.description:
             descr_title = QLabel("Description:", self)
-            descr_value = QLineEdit(self)
-            descr_value.setText(self.request_param.description)
-            descr_value.setDisabled(True)
-            grid.addWidget(descr_title, 1, 0, alignment=Qt.AlignLeft)
+
+            descr_value = QPlainTextEdit(self)
+            descr_value.setReadOnly(True)
+            descr_value.setPlainText(self.request_param.description)
+            font = descr_value.document().defaultFont()
+            font_metrics = QtGui.QFontMetrics(font)
+            text_size = font_metrics.size(0, descr_value.toPlainText())
+            text_height = text_size.height() + 10
+            descr_value.setMaximumHeight(text_height)
+
+            grid.addWidget(descr_title, 1, 0, alignment=Qt.AlignLeft | Qt.AlignTop)
             grid.addWidget(descr_value, 1, 1)
 
         self.setLayout(grid)
