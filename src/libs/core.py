@@ -134,4 +134,6 @@ def _prepare_type_to_replace(data) -> str:
         return str(data).lower()
     elif not isinstance(data, str):
         return str(data)
+    elif data.isdecimal():      # if it's a number, we shouldn't convert it to string
+        return data
     return f'"{data}"'          # need to return quotes

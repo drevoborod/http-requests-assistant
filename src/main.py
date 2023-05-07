@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QGridLayout, QDesktopWidget, QScrollArea, QVBoxLayout, QFormLayout,
     QDialog, QDialogButtonBox, QPlainTextEdit, QSizePolicy
 )
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt
 
 from libs.core import StructureParser, send_request
 from libs.structure import Request, RequestParam
