@@ -15,7 +15,11 @@
 # if "choices" exists: dropdown list of possible values will be displayed
 # if "text" exists: default value(s) will be shown in editable text area
 # "text" parameter supports JSON
-# also "description" parameter can exist. It contains read-only description which will be shown in the interface.
+# "text" has priority above "choices": if "text" exists, "choices" will be ignored
+# optional parameter "description" parameter can exist.
+#   It contains read-only description which will be shown in the interface.
+# optional parameter "type" can exist. It determines field's type and can be one of the following:
+#   string, number, boolean, null
 
 general:
     enable_http_log: true
@@ -30,6 +34,7 @@ http_requests:
                     text: "proverka"
                 z-source:
                     text: 888
+                    type: slon
 #                y-source:
 #                    text: 888
             json:
@@ -46,10 +51,21 @@ http_requests:
                         - 8
                         - 9
                         - 10
+                null_param:
+                    text: null
+                    choices:
+                        - 1
+                        - aaa
+                        - null
+                bool_param:
+                    text: true
+                    type: "boolean"
             json:
                 test_1: '{{{test_1}}}'
                 param2: '{{{param2}}}'
                 param3: some text
+                null_param: '{{{null_param}}}'
+                bool_param: '{{{bool_param}}}'
         body:
             keys:
                 enabled:
@@ -61,10 +77,12 @@ http_requests:
                 userIDs:
                     text: "[123, 456, 789]"
                 test_1:
-                    description: "Function 1"
+                    description: "2 for less, 4 for more, 42 if you want to know the truth"
                     choices:
                         - 2
                         - 4
+                        - 42
+                    type: "number"
                 pupil1:
                     text: Vasya
                     description: Stupid useless piece of shit
@@ -221,3 +239,15 @@ http_requests:
         name: "Complete check"
         url: "https://example.it/check/{item_id}/user/1956/approvecheck"
         method: "post"
+    request_with_null:
+        name: "Check null"
+        url: "https://example.it/check/{item_id}/user/1956/approvecheck"
+        method: "post"
+        body:
+            keys:
+                null_param:
+                    text: null
+                    type: "null"
+            json:
+                some_param: 11
+                null_param: '{{{null_param}}}'

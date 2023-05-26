@@ -8,7 +8,7 @@ from requests.exceptions import JSONDecodeError, RequestException
 import yaml
 
 from .structure import (General, Request, RequestSection, Structure, TEMPLATE_TO_SPLIT_URL, TEMPLATE_TO_REPLACE_PARAM,
-                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames)
+                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames, TypeNames, MISSING)
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -108,32 +108,34 @@ def send_request(request_object: Request):
 
 def _prepare_body(body: RequestSection) -> bytes:
     if body.json:           # prevent sending empty json in request body
-        json_template = json.dumps(body.json)
-        for key, value in body.parsed_keys.items():
-            placeholder = TEMPLATE_TO_REPLACE_PARAM % key
-            if placeholder not in json_template:
-                raise KeyError(f'Key "{key}" is defined but never used in the request body')
-            json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value))
-        return json_template.encode('utf-8')
+        return _fill_template(body).encode('utf-8')
 
 
 def _prepare_section(section: RequestSection) -> dict:
     if section.parsed_keys:
-        json_template = json.dumps(section.json)
-        for key, value in section.parsed_keys.items():
-            placeholder = TEMPLATE_TO_REPLACE_PARAM % key
-            if placeholder not in json_template:
-                raise KeyError(f'Key "{key}" is defined but never used')
-            json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value))
-        return json.loads(json_template)
+        return json.loads(_fill_template(section))
     return section.json
 
 
-def _prepare_type_to_replace(data) -> str:
-    if isinstance(data, bool):
-        return str(data).lower()
-    elif not isinstance(data, str):
-        return str(data)
-    elif data.isdecimal():      # if it's a number, we shouldn't convert it to string
-        return data
-    return f'"{data}"'          # need to return quotes
+def _fill_template(section: RequestSection):
+    json_template = json.dumps(section.json)
+    for key, value in section.parsed_keys.items():
+        placeholder = TEMPLATE_TO_REPLACE_PARAM % key
+        if placeholder not in json_template:
+            raise KeyError(f'Key "{key}" is defined but never used')
+        json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value, value.type))
+    return json_template
+
+
+def _prepare_type_to_replace(data: str, param_type: str) -> str:
+    match param_type:
+        case TypeNames.empty.value:
+            if data.isdecimal() or data in ("null", "true", "false"):
+                return data
+            return f'"{data}"'          # need to return quotes
+        case TypeNames.string.value:
+            return f'"{data}"'          # need to return quotes
+        case TypeNames.number.value | TypeNames.boolean.value:
+            return data
+        case TypeNames.null.value:
+            return "null"

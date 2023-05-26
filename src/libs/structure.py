@@ -1,12 +1,27 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, MISSING
 from enum import Enum   # ToDo: change to TextEnum after switching to Python 3.11
 import re
+from typing import Any
 
 
 TEMPLATE_TO_FIND_URL_PARTS = r"\{(.*?)}"
 TEMPLATE_TO_SPLIT_URL = r"\{.*?}"
 TEMPLATE_TO_REPLACE_PARAM = r'"{{{%s}}}"'
 HTTP_LOG = "http_log.txt"
+
+
+def _empty_value():
+    return MISSING
+
+
+def _to_string(value: Any) -> str:
+    match value:
+        case None:
+            return "null"
+        case bool():
+            return str(value).lower()
+        case _:
+            return str(value)
 
 
 ######## Names enums ################
@@ -40,6 +55,15 @@ class GeneralParamsNames(str, Enum):
     enable_http_log = "enable_http_log"
     http_log = "http_log"
 
+
+class TypeNames(Enum):
+    string = "string"
+    boolean = "boolean"
+    number = "number"
+    null = "null"
+    empty = MISSING
+
+
 ########### Data classes ##############
 
 @dataclass
@@ -50,10 +74,29 @@ class General:
 
 @dataclass
 class RequestParam:
-    choices: list = field(default_factory=list)
-    text: str = None
-    description: str = ""
-    current_value: str = None   # should be set after a user commands to send request.
+    choices: [list, TypeNames.empty.value] = field(default_factory=_empty_value)
+    text: [str, TypeNames.empty.value] = field(default_factory=_empty_value)
+    description: [str, TypeNames.empty.value] = field(default_factory=_empty_value)
+    type: str = field(default_factory=_empty_value)
+    current_value: [str, TypeNames.empty.value] = field(default_factory=_empty_value)   # should be set after a user commands to send request.
+
+    def __post_init__(self):
+        if self.text is not MISSING:  # support of boolean params in text area
+            match self.text:
+                case bool():
+                    self.choices = [_to_string(self.text), _to_string(not self.text)]
+                    self.text = MISSING
+                case _:
+                    self.text = _to_string(self.text)
+        if self.description is not MISSING:
+            self.description = str(self.description)
+        if not isinstance(self.choices, list):
+            self.choices = MISSING
+        if self.choices is not MISSING:
+            self.choices = list(map(_to_string, self.choices))
+        if self.type is not MISSING:
+            if self.type not in [x.value for x in TypeNames]:
+                self.type = TypeNames.string.value
 
 
 @dataclass
@@ -65,17 +108,8 @@ class RequestSection:
     def __post_init__(self):
         self.parsed_keys = {}
         for key, value in self.keys.items():
-            data = {}
-            if (text := value.get(NodeParamsNames.text)) is not None:  # support of boolean params in text area
-                if isinstance(text, bool):
-                    data[NodeParamsNames.choices.name] = [text, not text]
-                else:
-                    data[NodeParamsNames.text.name] = str(text)
-            if description := value.get(NodeParamsNames.description):
-                data[NodeParamsNames.description.name] = description
-            if choices := value.get(NodeParamsNames.choices):
-                data[NodeParamsNames.choices.name] = choices
-            self.parsed_keys[key] = RequestParam(**data)
+            data = RequestParam(**value)
+            self.parsed_keys[key] = data
 
 
 @dataclass
