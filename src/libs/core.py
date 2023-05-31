@@ -1,5 +1,5 @@
 import json
-from logging import Logger, FileHandler
+import logging
 import re
 from itertools import zip_longest
 
@@ -8,35 +8,34 @@ from requests.exceptions import JSONDecodeError, RequestException
 import yaml
 
 from .structure import (General, Request, RequestSection, Structure, TEMPLATE_TO_SPLIT_URL, TEMPLATE_TO_REPLACE_PARAM,
-                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames, TypeNames, MISSING)
+                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames, TypeNames, HTTP_LOG)
 
 
 STRUCTURE_FILE = "structure.yml"
 
 
 class StructureParser:
-    parsed = None
+    _parsed = None
     _structure = None
-    structure_file_name = STRUCTURE_FILE
 
-    @classmethod
+    def __init__(self, structure_file_name=STRUCTURE_FILE):
+        self.structure_file_name = structure_file_name
+
     @property
-    def structure(cls):
-        if not cls.parsed:
-            cls.parsed = cls._parse()
-        if not cls._structure:
-            cls._structure = cls._prepare()
-        return cls._structure
+    def structure(self):
+        if not self._parsed:
+            self._parsed = self._parse_file()
+        if not self._structure:
+            self._structure = self._prepare()
+        return self._structure
 
-    @classmethod
-    def _parse(cls) -> dict:
-        with open(cls.structure_file_name, 'r') as file:
+    def _parse_file(self) -> dict:
+        with open(self.structure_file_name, 'r') as file:
             return yaml.safe_load(file)
 
-    @classmethod
-    def _prepare(cls):
+    def _prepare(self):
         http_requests = {}
-        for key, value in cls.parsed[RootParamsNames.http_requests].items():
+        for key, value in self._parsed[RootParamsNames.http_requests].items():
             data = dict(
                 name=value[RequestParamsNames.name.name],
                 url=value[RequestParamsNames.url.name],
@@ -54,19 +53,21 @@ class StructureParser:
                         section_dict[RequestSectionParamsNames.keys.name] = keys
                     data[section_name.name] = RequestSection(**section_dict)
             http_requests[key] = Request(**data)
-        if cls.parsed.get(RootParamsNames.general.name):
+        if self._parsed.get(RootParamsNames.general.name):
             return Structure(
                 http_requests=http_requests,
-                general=General(**cls.parsed[RootParamsNames.general.name])
+                general=General(**self._parsed[RootParamsNames.general.name])
             )
         return Structure(http_requests)
 
 
-def send_request(request_object: Request):
-    enable_log = True if StructureParser().structure.general.enable_http_log else False
+def send_request(request_object: Request, enable_log=False, log_file=HTTP_LOG):
     if enable_log:
-        logger = Logger('requests sender')
-        logger.addHandler(FileHandler(StructureParser().structure.general.http_log))
+        logger = logging.Logger('requests sender')
+        handler = logging.FileHandler(log_file)
+        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s',
+                                               datefmt='%Y-%m-%d %H:%M:%S.%s'))
+        logger.addHandler(handler)
         logger.info(request_object)
     raw_body = _prepare_body(request_object.body)
     query_params = _prepare_section(request_object.query_params)
@@ -82,7 +83,7 @@ def send_request(request_object: Request):
             data=raw_body)
     prepared_request = request.prepare()
     if enable_log:
-        logger.info(f'\n######## Request: {request_object.name} #######\n'
+        logger.info(f'######## Request: {request_object.name} #######\n'
                     f'url: {prepared_request.url}\n'
                     f'Headers: {prepared_request.headers}\n'
                     f'Body: {prepared_request.body}\n')

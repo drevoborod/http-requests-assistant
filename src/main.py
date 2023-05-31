@@ -15,16 +15,16 @@ TITLE = "HTTP requests assistant"
 
 
 class MainWindow(QWidget):
-    def __init__(self, exit_callback):
+    def __init__(self, exit_callback, http_requests_structure):
         super().__init__()
         self.exit_callback = exit_callback
-        self.structure = StructureParser().structure
+        self.http_requests = http_requests_structure
         self.init_ui()
         self._center()
 
     def init_ui(self):
         self.setWindowTitle(TITLE)
-        requests_frame = RequestsFrame(self, self.structure.http_requests)
+        requests_frame = RequestsFrame(self, self.http_requests)
         main_grid = QGridLayout(self)
         main_grid.addWidget(requests_frame, 0, 0)
         self.setLayout(main_grid)
@@ -164,7 +164,11 @@ class HTTPRequestFrame(QFrame):
             param.current_value = self.body_mapping[key].value
 
         try:
-            result = send_request(self.http_request_data)
+            result = send_request(
+                self.http_request_data,
+                CONFIG.structure.general.enable_http_log,
+                CONFIG.structure.general.http_log
+            )
         except Exception as err:
             self.show_result(str(err))
         else:
@@ -252,7 +256,8 @@ def center_dialogue_window(widget, source_widget):
 
 
 if __name__ == "__main__":
+    CONFIG = StructureParser()
     app = QApplication([])
-    gui = MainWindow(app.exit)
+    gui = MainWindow(app.exit, CONFIG.structure.http_requests)
     app.exec()
 
