@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import logging
 import re
@@ -8,7 +9,8 @@ from requests.exceptions import JSONDecodeError, RequestException
 import yaml
 
 from .structure import (General, Request, RequestSection, Structure, TEMPLATE_TO_SPLIT_URL, TEMPLATE_TO_REPLACE_PARAM,
-                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames, TypeNames, HTTP_LOG)
+                        RequestParamsNames, RequestSectionParamsNames, RootParamsNames, TypeNames, JsonValuesMatch,
+                        HTTP_LOG)
 
 
 STRUCTURE_FILE = "structure.yml"
@@ -69,7 +71,7 @@ def send_request(request_object: Request, enable_log=False, log_file=HTTP_LOG):
                                                datefmt='%Y-%m-%d %H:%M:%S.%s'))
         logger.addHandler(handler)
         logger.info(request_object)
-    raw_body = _prepare_body(request_object.body)
+    body_json = _prepare_section(request_object.body)
     query_params = _prepare_section(request_object.query_params)
     headers = _prepare_section(request_object.headers)
     url_parts = [value.current_value for value in request_object.parsed_url_parts]
@@ -80,7 +82,7 @@ def send_request(request_object: Request, enable_log=False, log_file=HTTP_LOG):
             url=url,
             params=query_params,
             headers=headers,
-            data=raw_body)
+            json=body_json)
     prepared_request = request.prepare()
     if enable_log:
         logger.info(f'######## Request: {request_object.name} #######\n'
@@ -96,47 +98,57 @@ def send_request(request_object: Request, enable_log=False, log_file=HTTP_LOG):
         return str(err)
     else:
         try:
-            resp = json.dumps(response.json(), indent=4, ensure_ascii=False)
+            text_response = json.dumps(response.json(), indent=4, ensure_ascii=False)
             if enable_log:
-                logger.info(resp)
-            return resp
+                logger.info(text_response)
+            return text_response
         except (JSONDecodeError, UnicodeDecodeError):
-            resp = response.content.decode(encoding="utf-8")
+            text_response = response.content.decode(encoding="utf-8")
             if enable_log:
-                logger.info(resp)
-            return resp
+                logger.info(text_response)
+            return text_response
 
 
-def _prepare_body(body: RequestSection) -> bytes:
-    if body.json:           # prevent sending empty json in request body
-        return _fill_template(body).encode('utf-8')
-
-
-def _prepare_section(section: RequestSection) -> dict:
-    if section.parsed_keys:
-        return json.loads(_fill_template(section))
-    return section.json
-
-
-def _fill_template(section: RequestSection):
-    json_template = json.dumps(section.json)
-    for key, value in section.parsed_keys.items():
+def _prepare_section(section: RequestSection):
+    result = deepcopy(section.json)
+    for key, request_param in section.parsed_keys.items():
         placeholder = TEMPLATE_TO_REPLACE_PARAM % key
-        if placeholder not in json_template:
-            raise KeyError(f'Key "{key}" is defined but never used')
-        json_template = json_template.replace(placeholder, _prepare_type_to_replace(value.current_value, value.type))
-    return json_template
+        result = _replace_template(result, placeholder, request_param.current_value, request_param.type)
+    return result
 
 
-def _prepare_type_to_replace(data: str, param_type: str) -> str:
+def _replace_template(data: [dict, list], template: str, new_value: str, value_type: str):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if value == template:
+                data[key] = _prepare_type_to_replace(new_value, value_type)
+            elif isinstance(value, (dict, list)):
+                data[key] = _replace_template(value, template, new_value, value_type)
+    elif isinstance(data, list):
+        for number, item in enumerate(data):
+            if item == template:
+                data[number] = _prepare_type_to_replace(new_value, value_type)
+            elif isinstance(item, (dict, list)):
+                data[number] = _replace_template(item, template, new_value, value_type)
+    return data
+
+
+def _prepare_type_to_replace(data, param_type: str):
     match param_type:
         case TypeNames.empty.value:
-            if data.isdecimal() or data in ("null", "true", "false"):
+            if data.isdecimal():
+                return int(data)
+
+            try:
+                return JsonValuesMatch[data.casefold()].value
+            except KeyError:
                 return data
-            return f'"{data}"'          # need to return quotes
         case TypeNames.string.value:
-            return f'"{data}"'          # need to return quotes
-        case TypeNames.number.value | TypeNames.boolean.value:
             return data
-        case TypeNames.null.value:
-            return "null"
+        case TypeNames.number.value:
+            return int(data)
+        case TypeNames.boolean.value:
+            try:
+                return JsonValuesMatch[data.casefold()].value
+            except KeyError:
+                raise ValueError(f"Incorrect value for boolean type: {data}")

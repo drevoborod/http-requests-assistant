@@ -1,27 +1,12 @@
-from dataclasses import dataclass, field, MISSING
+from dataclasses import dataclass, field
 from enum import Enum   # ToDo: change to TextEnum after switching to Python 3.11
 import re
-from typing import Any
 
 
 TEMPLATE_TO_FIND_URL_PARTS = r"\{(.*?)}"
 TEMPLATE_TO_SPLIT_URL = r"\{.*?}"
-TEMPLATE_TO_REPLACE_PARAM = r'"{{{%s}}}"'
+TEMPLATE_TO_REPLACE_PARAM = r'{{{%s}}}'
 HTTP_LOG = "http_log.txt"
-
-
-def _empty_value():
-    return MISSING
-
-
-def _to_string(value: Any) -> str:
-    match value:
-        case None:
-            return "null"
-        case bool():
-            return str(value).lower()
-        case _:
-            return str(value)
 
 
 ######## Names enums ################
@@ -60,8 +45,17 @@ class TypeNames(Enum):
     string = "string"
     boolean = "boolean"
     number = "number"
-    null = "null"
-    empty = MISSING
+    empty = "__empty__"
+
+
+class JsonValuesMatch(Enum):
+    true = True
+    false = False
+    null = None
+
+
+def _empty_value():
+    return TypeNames.empty.value
 
 
 ########### Data classes ##############
@@ -81,20 +75,15 @@ class RequestParam:
     current_value: [str, TypeNames.empty.value] = field(default_factory=_empty_value)   # should be set after a user commands to send request.
 
     def __post_init__(self):
-        if self.text is not MISSING:  # support of boolean params in text area
-            match self.text:
-                case bool():
-                    self.choices = [_to_string(self.text), _to_string(not self.text)]
-                    self.text = MISSING
-                case _:
-                    self.text = _to_string(self.text)
-        if self.description is not MISSING:
+        if self.text != TypeNames.empty.value:
+            self.text = str(self.text)
+        if self.description != TypeNames.empty.value:
             self.description = str(self.description)
         if not isinstance(self.choices, list):
-            self.choices = MISSING
-        if self.choices is not MISSING:
-            self.choices = list(map(_to_string, self.choices))
-        if self.type is not MISSING:
+            self.choices = TypeNames.empty.value
+        if self.choices != TypeNames.empty.value:
+            self.choices = list(map(str, self.choices))
+        if self.type != TypeNames.empty.value:
             if self.type not in [x.value for x in TypeNames]:
                 self.type = TypeNames.string.value
 

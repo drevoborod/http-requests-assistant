@@ -1,4 +1,7 @@
-+ 1. Add timestamps to log.
-+ 2. Make a decision: should we declare parameter type as optional or mandatory? - Decision: type remains optional.
-3. Make substitution of values recursive instead of converting to string and back.
-4. Write tests of substitution functions (in "core" module).
++ Add timestamps to log.
++ Make a decision: should we declare parameter type as optional or mandatory? - Decision: type remains optional.
++ Make substitution of values recursive instead of converting to string and back.
+- Display json-like type values (true, null) in choices dropdowns and text areas.
+- Fix all cases in substitutions
+    - check: "None" instead of null even if type "null" is set.
+- Write tests of substitution functions (in "core" module: _prepare_section? Or even end-to-end: from config to request?).

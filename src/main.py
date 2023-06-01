@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 
 from libs.core import StructureParser, send_request
-from libs.structure import MISSING, Request, RequestParam
+from libs.structure import Request, RequestParam, TypeNames
 
 
 TITLE = "HTTP requests assistant"
@@ -210,17 +210,17 @@ class ParamRow(QFrame):
         name = QLabel(self.request_param_name, self)
         name.setFrameShape(QFrame.Box)
 
-        if self.request_param.text is not MISSING:
+        if self.request_param.text != TypeNames.empty.value:
             self._area = QLineEdit(self)
             self._area.setText(self.request_param.text)
         else:
             self._area = QComboBox(self)
-            self._area.addItems(map(str, self.request_param.choices))
+            self._area.addItems(self.request_param.choices)
 
         self._area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         grid.addWidget(name, 0, 0, alignment=Qt.AlignLeft)
         grid.addWidget(self._area, 0, 1)
-        if self.request_param.description is not MISSING:
+        if self.request_param.description != TypeNames.empty.value:
             descr_title = QLabel("Description:", self)
 
             descr_value = QPlainTextEdit(self)

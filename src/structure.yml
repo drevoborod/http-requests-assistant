@@ -19,7 +19,8 @@
 # optional parameter "description" parameter can exist.
 #   It contains read-only description which will be shown in the interface.
 # optional parameter "type" can exist. It determines field's type and can be one of the following:
-#   string, number, boolean, null
+#   string, number, boolean
+# Attention! Please use correct type or quotes if you want something like to place boolean value in text area.
 
 general:
     enable_http_log: true
@@ -72,6 +73,7 @@ http_requests:
                     choices:
                         - true
                         - false
+                    type: boolean
                 ID:
                     text: "123456"
                 userIDs:
@@ -99,7 +101,7 @@ http_requests:
                     text: 1234321
             json:
                 data:
-                    enabled: '{{{enabled}}}'
+                    enabled: "{{{enabled}}}"
                     ID: '{{{ID}}}'
                     test1: '{{{test_1}}}'
                     param3_dict:
