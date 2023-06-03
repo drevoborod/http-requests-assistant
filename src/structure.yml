@@ -20,7 +20,7 @@
 #   It contains read-only description which will be shown in the interface.
 # optional parameter "type" can exist. It determines field's type and can be one of the following:
 #   string, number, boolean
-# Attention! Please use correct type or quotes if you want something like to place boolean value in text area.
+# Attention! Please use correct type or quotes if you want to do something like to place boolean value in the text area.
 
 general:
     enable_http_log: true
@@ -35,7 +35,7 @@ http_requests:
                     text: "proverka"
                 z-source:
                     text: 888
-                    type: slon
+                    type: number
 #                y-source:
 #                    text: 888
             json:

@@ -5,3 +5,4 @@
 - Fix all cases in substitutions
     - check: "None" instead of null even if type "null" is set.
 - Write tests of substitution functions (in "core" module: _prepare_section? Or even end-to-end: from config to request?).
+- ? Support choices of different types (probably not needed)

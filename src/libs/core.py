@@ -133,9 +133,11 @@ def _replace_template(data: [dict, list], template: str, new_value: str, value_t
     return data
 
 
-def _prepare_type_to_replace(data, param_type: str):
+def _prepare_type_to_replace(data: str | int | bool | None, param_type: str):
     match param_type:
         case TypeNames.empty.value:
+            if isinstance(data, (bool, int, type(None))):
+                return data
             if data.isdecimal():
                 return int(data)
 
@@ -144,11 +146,16 @@ def _prepare_type_to_replace(data, param_type: str):
             except KeyError:
                 return data
         case TypeNames.string.value:
-            return data
+            return str(data)
         case TypeNames.number.value:
-            return int(data)
+            try:
+                return int(data)
+            except (ValueError, TypeError):
+                raise ValueError(f"Incorrect value for type 'number': {data}")
         case TypeNames.boolean.value:
+            if isinstance(data, bool):
+                return data
             try:
                 return JsonValuesMatch[data.casefold()].value
-            except KeyError:
+            except (KeyError, AttributeError):
                 raise ValueError(f"Incorrect value for boolean type: {data}")
